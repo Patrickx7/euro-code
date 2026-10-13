@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Simulador de caminhão em Osasco e Cotia onde você aprende JavaScript e TypeScript para seguir viagem."
+    />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <title>Euro Code</title>
+  </head>
+  <body>
+    <canvas id="game" aria-label="Visão do caminhão na estrada"></canvas>
+    <div id="hud" class="hud">
+      <header class="hud__title">
+        <h1>Euro Code</h1>
+        <p>Fase 0 · protótipo</p>
+      </header>
+      <dl class="hud__panel">
+        <div>
+          <dt>Hora</dt>
+          <dd id="hud-clock">--:--</dd>
+        </div>
+        <div>
+          <dt>Velocidade</dt>
+          <dd id="hud-speed">0 km/h</dd>
+        </div>
+        <div>
+          <dt>Nível</dt>
+          <dd id="hud-level">1</dd>
+        </div>
+        <div>
+          <dt>Dinheiro</dt>
+          <dd id="hud-money">R$ 0</dd>
+        </div>
+        <div>
+          <dt>FPS</dt>
+          <dd id="hud-fps">0</dd>
+        </div>
+      </dl>
+    </div>
+    <p id="fatal" class="fatal" hidden></p>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

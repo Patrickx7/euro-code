@@ -1,17 +1,19 @@
 # Euro Code — Plano do Projeto
 
-Simulador de caminhão no estilo *Euro Truck Simulator*, ambientado em **Osasco e Cotia (SP)**, em que o
+> **Status:** Fase 0 (fundação) concluída. Próximas: Fases 1, 2, 3, 4a–4d e 5a–5c, que podem rodar em paralelo.
+
+Simulador de caminhão no estilo _Euro Truck Simulator_, ambientado em **Osasco e Cotia (SP)**, em que o
 jogador aprende **JavaScript com Node.js e migra até TypeScript** para manter o caminhão rodando:
 
-| Ação no jogo | O que o jogador precisa fazer |
-|---|---|
-| Abastecer no posto | Estudar a lição da vez e resolver o exercício de código |
-| Passar no pedágio | Responder corretamente perguntas sobre o que já estudou |
-| Subir de nível | Passar na "Prova de Habilitação" do módulo atual |
-| Comprar caminhão novo | Vencer o desafio técnico da concessionária |
-| Ser parado numa blitz | Responder perguntas sobre os exercícios que acabou de fazer (errou = multa e pontos na CNH) |
-| Dormir no hotel quando bater o sono | Responder perguntas para conseguir fazer o check-in |
-| Consertar pane na estrada | Chamar o mecânico (caro) ou resolver um exercício de depuração (barato) |
+| Ação no jogo                        | O que o jogador precisa fazer                                                               |
+| ----------------------------------- | ------------------------------------------------------------------------------------------- |
+| Abastecer no posto                  | Estudar a lição da vez e resolver o exercício de código                                     |
+| Passar no pedágio                   | Responder corretamente perguntas sobre o que já estudou                                     |
+| Subir de nível                      | Passar na "Prova de Habilitação" do módulo atual                                            |
+| Comprar caminhão novo               | Vencer o desafio técnico da concessionária                                                  |
+| Ser parado numa blitz               | Responder perguntas sobre os exercícios que acabou de fazer (errou = multa e pontos na CNH) |
+| Dormir no hotel quando bater o sono | Responder perguntas para conseguir fazer o check-in                                         |
+| Consertar pane na estrada           | Chamar o mecânico (caro) ou resolver um exercício de depuração (barato)                     |
 
 O mundo também tem **trânsito com IA**, **pneus que gastam**, **desgaste mecânico com falhas**
 (engasgos, motor apagando, pane total) e **polícia orientando o trânsito** quando o caminhão quebra num
@@ -26,26 +28,27 @@ lugar perigoso.
 
 ## 1. Decisões técnicas
 
-| Tema | Decisão | Motivo |
-|---|---|---|
-| Plataforma | Navegador (desktop), publicado no GitHub Pages | Zero instalação; dá para testar com o Chromium/Playwright das sessões na nuvem |
-| Linguagem | TypeScript estrito | O próprio projeto vira referência do que o jogador aprende |
-| Build | Vite | Rápido, simples, bom suporte a Web Workers |
-| 3D | Three.js | Maduro, leve, ótimo para estradas geradas proceduralmente |
-| Física | Física "arcade" própria (modelo de bicicleta + reboque articulado) | Mais controlável e leve que uma engine completa; dá para trocar por Rapier depois |
-| Editor de código no jogo | CodeMirror 6 | Leve, com suporte a JS/TS |
-| Execução do código do jogador | Web Worker isolado, com timeout, e "simulador de Node" (`console`, `process`, `require`/`module.exports`, `fs` em memória, `path`, `events`) | Roda 100% no navegador, sem servidor; mata loops infinitos |
-| Checagem de TypeScript | Pacote `typescript` dentro do Worker (type-check real + transpile) | Erros de tipo idênticos aos do `tsc` |
-| Persistência | `localStorage` + exportar/importar save em JSON | Sem backend |
-| Testes | Vitest (unidade e conteúdo) + Playwright (ponta a ponta) | Cada sessão na nuvem valida o próprio trabalho |
-| CI/CD | GitHub Actions: lint, typecheck, testes, validação do conteúdo, deploy no Pages | |
-| Idioma | Interface e conteúdo em PT-BR; identificadores de código em inglês | |
+| Tema                          | Decisão                                                                                                                                      | Motivo                                                                            |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Plataforma                    | Navegador (desktop), publicado no GitHub Pages                                                                                               | Zero instalação; dá para testar com o Chromium/Playwright das sessões na nuvem    |
+| Linguagem                     | TypeScript estrito                                                                                                                           | O próprio projeto vira referência do que o jogador aprende                        |
+| Build                         | Vite                                                                                                                                         | Rápido, simples, bom suporte a Web Workers                                        |
+| 3D                            | Three.js                                                                                                                                     | Maduro, leve, ótimo para estradas geradas proceduralmente                         |
+| Física                        | Física "arcade" própria (modelo de bicicleta + reboque articulado)                                                                           | Mais controlável e leve que uma engine completa; dá para trocar por Rapier depois |
+| Editor de código no jogo      | CodeMirror 6                                                                                                                                 | Leve, com suporte a JS/TS                                                         |
+| Execução do código do jogador | Web Worker isolado, com timeout, e "simulador de Node" (`console`, `process`, `require`/`module.exports`, `fs` em memória, `path`, `events`) | Roda 100% no navegador, sem servidor; mata loops infinitos                        |
+| Checagem de TypeScript        | Pacote `typescript` dentro do Worker (type-check real + transpile)                                                                           | Erros de tipo idênticos aos do `tsc`                                              |
+| Persistência                  | `localStorage` + exportar/importar save em JSON                                                                                              | Sem backend                                                                       |
+| Testes                        | Vitest (unidade e conteúdo) + Playwright (ponta a ponta)                                                                                     | Cada sessão na nuvem valida o próprio trabalho                                    |
+| CI/CD                         | GitHub Actions: lint, typecheck, testes, validação do conteúdo, deploy no Pages                                                              |                                                                                   |
+| Idioma                        | Interface e conteúdo em PT-BR; identificadores de código em inglês                                                                           |                                                                                   |
 
 ---
 
 ## 2. Mecânicas de jogo
 
 ### 2.1 Dirigir (o "feeling" do ETS)
+
 - Câmeras: cabine (com retrovisores), externa orbital e superior.
 - Controles: teclado, gamepad e volante (Gamepad API); câmbio automático no MVP, manual depois.
 - Reboque articulado com engate/desengate, ré com reboque, peso da carga afetando aceleração e frenagem.
@@ -54,6 +57,7 @@ lugar perigoso.
 - Escala comprimida (~1:4 nas rodovias, cidades mais próximas de 1:2) para viagens de 5 a 10 minutos.
 
 ### 2.2 Fretes e economia
+
 - Mercado de fretes em empresas **fictícias** localizadas em pontos reais (centros de distribuição na
   Castello Branco, indústrias em Osasco, chácaras/hortifrúti em Caucaia do Alto, comércio na Granja Viana etc.).
 - Pagamento = distância × tipo de carga × prazo − danos − multas.
@@ -61,6 +65,7 @@ lugar perigoso.
 - Garagem inicial em Osasco; caminhão inicial modesto (tanque pequeno, pouca potência).
 
 ### 2.3 Combustível → exercícios de JavaScript/TypeScript
+
 1. O tanque esvazia conforme distância, carga e estilo de direção.
 2. No posto, abre-se o "terminal do frentista" (visual de terminal, `$ node bomba.js`).
 3. **Primeiro a aula:** texto curto do conceito, exemplos executáveis ("rodar" mostra a saída) e 1–2
@@ -72,6 +77,7 @@ lugar perigoso.
    "reabastecidos" de novo com uma variação para revisão, se o jogador quiser praticar.
 
 ### 2.4 Pedágio → perguntas
+
 - Ao entrar na praça, a cancela só abre com resposta correta.
 - Perguntas vêm **somente de lições já estudadas**, com repetição espaçada (as que o jogador errou
   voltam mais vezes).
@@ -79,6 +85,7 @@ lugar perigoso.
 - Tipos: múltipla escolha, "qual a saída deste código?", completar lacuna, verdadeiro/falso.
 
 ### 2.5 Subir de nível → Prova de Habilitação
+
 - XP vem dos fretes. Ao atingir o XP, o nível só sobe após a prova (ex.: 8 perguntas + 1 exercício)
   feita num "Centro de Formação de Condutores" no mapa.
 - Requisito: todas as lições do módulo atual concluídas nos postos.
@@ -86,16 +93,19 @@ lugar perigoso.
   com pedágio).
 
 ### 2.6 Comprar caminhão → desafio da concessionária
+
 - Cada caminhão (modelos fictícios) tem preço, potência, tanque, consumo e capacidade de reboque.
 - Além do dinheiro, a compra exige um desafio (exercício maior, que integra vários conceitos do nível
   exigido pelo caminhão).
 
 ### 2.7 Relógio do jogo
+
 - O tempo do jogo corre acelerado: **1 minuto real = 10 minutos no jogo** (ajustável).
 - O relógio controla o sono, os prazos de entrega, o ciclo de dia e noite e o horário de funcionamento
   das oficinas.
 
 ### 2.8 Trânsito
+
 - Carros, ônibus, motos e outros caminhões controlados por IA, que seguem faixa, mudam de faixa, respeitam
   semáforos (extraídos do OSM), preferenciais e limites de velocidade.
 - Densidade varia por horário (pico de manhã e no fim da tarde na Castello e na Raposo).
@@ -104,6 +114,7 @@ lugar perigoso.
 - Colisão com veículo da IA gera dano, multa e possível chegada da polícia.
 
 ### 2.9 Blitz policial e penalidades
+
 - Blitz em pontos fixos e aleatórios (mais comuns à noite e nas saídas das rodovias). O policial sinaliza e
   o jogador deve parar no acostamento; fugir gera multa pesada e perseguição curta.
 - **Perguntas da blitz:** sobre os **exercícios resolvidos mais recentemente** ("o que seu código retorna
@@ -116,6 +127,7 @@ lugar perigoso.
 - Infrações de trânsito (velocidade, sinal vermelho, colisão) também somam pontos.
 
 ### 2.10 Sono e hotel
+
 - Uma barra de **cansaço** sobe com as horas dirigindo (mais rápido de madrugada).
 - Aos 70%: aviso e GPS sugere o hotel mais próximo. Aos 90%: efeitos de sono (tela escurece nas bordas,
   piscadas, o volante "puxa"). Aos 100%: risco de **microssono** (perda de controle por instantes) e o
@@ -126,6 +138,7 @@ lugar perigoso.
   (cobra taxa, o caminhão fica estacionado).
 
 ### 2.11 Pneus e desgaste mecânico
+
 - **Pneus:** desgaste por eixo, conforme distância, carga, frenagens e curvas fortes. Pneu gasto reduz a
   aderência e aumenta a distância de frenagem; pneu careca pode **furar**. Troca na borracharia (ou estepe
   na estrada, com tempo de jogo gasto).
@@ -140,6 +153,7 @@ lugar perigoso.
   depuração**: um código "quebrado" do sistema do caminhão para o jogador corrigir.
 
 ### 2.12 Pane em local perigoso
+
 - Se o caminhão parar numa faixa de rodovia, em cruzamento ou em curva, uma viatura chega, coloca cones e um
   policial orienta o trânsito, desviando os veículos da IA para outra faixa.
 - Pane em lugar perigoso sem pisca-alerta ligado gera multa.
@@ -147,22 +161,22 @@ lugar perigoso.
 
 ### 2.13 Mapa de progressão (níveis × currículo)
 
-| Nível | Módulo liberado | Caminhão típico |
-|---|---|---|
-| 1 | M1 Primeiros passos com Node | Toco leve |
-| 2 | M2 Operadores e controle de fluxo | |
-| 3 | M3 Funções | Truck |
-| 4 | M4 Arrays e objetos | |
-| 5 | M5 Módulos (CommonJS → ESM) | Cavalo 4x2 |
-| 6 | M6 Programação assíncrona | |
-| 7 | M7 Núcleo do Node | |
-| 8 | M8 Classes e POO | Cavalo 6x2 |
-| 9 | M9 Introdução ao TypeScript | |
-| 10 | M10 Tipando objetos e funções | |
-| 11 | M11 Uniões e narrowing | Cavalo 6x4 |
-| 12 | M12 Genéricos | |
-| 13 | M13 Utility types e tipos avançados | |
-| 14 | M14 Projeto final: migrar o sistema de fretes de JS para TS | Topo de linha |
+| Nível | Módulo liberado                                             | Caminhão típico |
+| ----- | ----------------------------------------------------------- | --------------- |
+| 1     | M1 Primeiros passos com Node                                | Toco leve       |
+| 2     | M2 Operadores e controle de fluxo                           |                 |
+| 3     | M3 Funções                                                  | Truck           |
+| 4     | M4 Arrays e objetos                                         |                 |
+| 5     | M5 Módulos (CommonJS → ESM)                                 | Cavalo 4x2      |
+| 6     | M6 Programação assíncrona                                   |                 |
+| 7     | M7 Núcleo do Node                                           |                 |
+| 8     | M8 Classes e POO                                            | Cavalo 6x2      |
+| 9     | M9 Introdução ao TypeScript                                 |                 |
+| 10    | M10 Tipando objetos e funções                               |                 |
+| 11    | M11 Uniões e narrowing                                      | Cavalo 6x4      |
+| 12    | M12 Genéricos                                               |                 |
+| 13    | M13 Utility types e tipos avançados                         |                 |
+| 14    | M14 Projeto final: migrar o sistema de fretes de JS para TS | Topo de linha   |
 
 ---
 
@@ -174,6 +188,7 @@ exercício(s)**. Cada exercício tem **perguntas de acompanhamento** (usadas na 
 exercícios de depuração, ~600 perguntas.
 
 ### Trilha 1 — JavaScript com Node.js
+
 - **M1 Primeiros passos:** o que é Node/runtime, rodar um script, `console.log`, comentários, `let`/`const`,
   tipos primitivos, template strings.
 - **M2 Operadores e controle:** aritméticos, `===` vs `==`, lógicos, truthy/falsy, `if`/`else`, `switch`,
@@ -187,6 +202,7 @@ exercícios de depuração, ~600 perguntas.
 - **M8 Classes e POO:** `class`, construtor, métodos, herança, getters/setters, campos `#privados`, `instanceof`.
 
 ### Trilha 2 — TypeScript
+
 - **M9 Por que TypeScript:** anotações, inferência, primitivos, arrays e tuplas, `any` vs `unknown`, `tsc` e `tsconfig`.
 - **M10 Objetos e funções:** `type` vs `interface`, opcionais, `readonly`, assinaturas de função, sobrecarga.
 - **M11 Uniões e narrowing:** tipos literais, guards (`typeof`, `in`, `instanceof`), uniões discriminadas,
@@ -223,8 +239,8 @@ jogador "constrói" partes do sistema do próprio caminhão.
 
 > ⚠️ **Rede:** nesta sessão na nuvem, `overpass-api.de` e `download.geofabrik.de` estão **bloqueados**
 > pela política de rede do ambiente (o npm funciona). Antes da Fase 1, edite o ambiente em
-> claude.ai/code → menu do ambiente → *Edit* → *Network access* e adicione esses dois domínios em
-> *Allowed domains* (mantendo "Allow package managers" marcado). Passo a passo:
+> claude.ai/code → menu do ambiente → _Edit_ → _Network access_ e adicione esses dois domínios em
+> _Allowed domains_ (mantendo "Allow package managers" marcado). Passo a passo:
 > https://code.claude.com/docs/en/cloud-environments#network-access
 > Alternativa: baixar o recorte no seu computador e commitar o arquivo em `tools/map/raw/`.
 
@@ -257,8 +273,8 @@ tests/e2e/     Playwright
 ```ts
 // src/shared/content.ts
 export interface Lesson {
-  id: string;                 // "node.m01.l02"
-  moduleId: string;           // "node.m01"
+  id: string; // "node.m01.l02"
+  moduleId: string; // "node.m01"
   order: number;
   title: string;
   concepts: string[];
@@ -280,7 +296,7 @@ export interface Exercise {
   language: 'js' | 'ts';
   moduleSystem: 'commonjs' | 'esm';
   starterCode: string;
-  solution: string;           // a CI garante que passa em todos os testes
+  solution: string; // a CI garante que passa em todos os testes
   tests: Array<{ description: string; code: string }>; // roda após o código do jogador, com `assert`
   hints: string[];
   followUpQuestionIds: string[]; // perguntas sobre este exercício, usadas na blitz
@@ -289,8 +305,8 @@ export interface Exercise {
 
 export interface Question {
   id: string;
-  lessonIds: string[];        // só aparece no pedágio depois dessas lições
-  exerciseId?: string;        // preenchido nas perguntas de acompanhamento (blitz)
+  lessonIds: string[]; // só aparece no pedágio depois dessas lições
+  exerciseId?: string; // preenchido nas perguntas de acompanhamento (blitz)
   kind: 'multiple-choice' | 'predict-output' | 'fill-blank' | 'true-false';
   prompt: string;
   code?: string;
@@ -301,32 +317,53 @@ export interface Question {
 }
 
 // src/shared/map.ts
-export type RoadKind = 'motorway' | 'trunk' | 'primary' | 'secondary' | 'tertiary' | 'residential' | 'service';
+export type RoadKind =
+  'motorway' | 'trunk' | 'primary' | 'secondary' | 'tertiary' | 'residential' | 'service';
 export interface MapData {
   meta: { bbox: [number, number, number, number]; scale: number; attribution: string };
   nodes: Array<{ id: string; x: number; z: number; y: number }>;
-  roads: Array<{ id: string; nodeIds: string[]; kind: RoadKind; name?: string; ref?: string;
-                 lanes: number; oneway: boolean; maxSpeedKmh: number }>;
+  roads: Array<{
+    id: string;
+    nodeIds: string[];
+    kind: RoadKind;
+    name?: string;
+    ref?: string;
+    lanes: number;
+    oneway: boolean;
+    maxSpeedKmh: number;
+  }>;
   tolls: Array<{ id: string; roadId: string; nodeId: string; name: string; price: number }>;
-  pois: Array<{ id: string; kind: 'fuel' | 'company' | 'dealer' | 'garage' | 'exam-center'
-                | 'hotel' | 'mechanic' | 'tire-shop' | 'police-checkpoint';
-                name: string; nodeId: string }>;
+  pois: Array<{
+    id: string;
+    kind:
+      | 'fuel'
+      | 'company'
+      | 'dealer'
+      | 'garage'
+      | 'exam-center'
+      | 'hotel'
+      | 'mechanic'
+      | 'tire-shop'
+      | 'police-checkpoint';
+    name: string;
+    nodeId: string;
+  }>;
   trafficSignals: Array<{ id: string; nodeId: string }>;
-  buildingChunks: string[];   // arquivos separados, carregados sob demanda
+  buildingChunks: string[]; // arquivos separados, carregados sob demanda
 }
 
 // src/shared/vehicle.ts
 export type ComponentId = 'engine' | 'transmission' | 'brakes' | 'electrical';
 export interface VehicleCondition {
   tires: Array<{ axle: number; wear: number; punctured: boolean }>; // wear 0 (novo) a 1 (careca)
-  components: Record<ComponentId, number>;                          // saúde 0 a 1
+  components: Record<ComponentId, number>; // saúde 0 a 1
   activeFault: null | { kind: 'sputter' | 'stall' | 'breakdown'; component: ComponentId };
 }
 
 // src/shared/player.ts
 export interface DriverState {
-  fatigue: number;            // 0 a 1
-  licensePoints: number;      // CNH; >= 20 suspende
+  fatigue: number; // 0 a 1
+  licensePoints: number; // CNH; >= 20 suspende
   licenseSuspended: boolean;
   recentExerciseIds: string[]; // base das perguntas da blitz
 }
@@ -338,6 +375,7 @@ export type Penalty =
 ```
 
 Regras de qualidade do conteúdo (verificadas na CI):
+
 - a `solution` de cada exercício passa em todos os testes; o `starterCode` falha em pelo menos um;
 - exercícios TS também passam no type-check; testes podem usar `// @ts-expect-error` para exigir erro de tipo;
 - toda pergunta referencia lições existentes; múltipla escolha tem `answer` válido;
@@ -360,20 +398,20 @@ Fase 0 (fundação) ──┬── Fase 1 Mapa ──────────�
                     └── Fase 5a–5c Conteúdo TS                    Fase 9 UI/áudio/ambiente ── Fase 10 Integração
 ```
 
-| Fase | Sessões | Depende de | Entregáveis | Pronto quando |
-|---|---|---|---|---|
-| **0 Fundação** | 1 | — | Vite + TS estrito + Three.js, ESLint/Prettier, Vitest, Playwright, CI, deploy no Pages, hook de início de sessão (instala dependências), contratos de `src/shared/`, event bus, save, cena placeholder, script `validate:content` | `npm run lint && npm run typecheck && npm test && npm run e2e` passam; página publicada |
-| **1 Mapa** | 1–2 | 0 + liberar rede | Pipeline OSM → JSON, malha de estradas, prédios, terreno, chunks, A*, minimapa, crédito OSM, hotéis/oficinas/borracharias/semáforos/pontos de blitz | Dá para "voar" pelo mapa; teste do A* entre Osasco e Caucaia do Alto |
-| **2 Caminhão** | 2 | 0 | Física do caminhão + reboque, câmeras, controles (teclado/gamepad/volante), consumo, dano, desgaste de pneus (aderência, furo, estepe), saúde dos componentes e falhas (engasgo, motor apagando, pane), pisca-alerta | Dirigir numa pista de teste, engatar reboque, dar ré; testes de física, desgaste e falhas |
-| **3 Motor educacional** | 1–2 | 0 | Worker com timeout, simulador de Node, CommonJS e ESM, checagem TS, corretor com `assert`, exercícios de depuração, perguntas de acompanhamento, repetição espaçada com revisão prioritária, modal de aula/exercício com CodeMirror | Exercícios de exemplo de JS e TS corrigidos corretamente; loop infinito é interrompido |
-| **4a–4d Conteúdo Node** | 4 (M1–2, M3–4, M5–6, M7–8) | 0 | Lições, exercícios, exercícios de depuração, perguntas de checagem e de acompanhamento | `validate:content` passa |
-| **5a–5c Conteúdo TS** | 3 (M9–10, M11–12, M13–14) | 0 | Idem, + projeto final | `validate:content` passa |
-| **6 Trânsito** | 2 | 1, 2 | IA de veículos no grafo de ruas, semáforos, preferenciais, densidade por horário, spawn/despawn ao redor do jogador, reação a obstáculos e faixas bloqueadas, colisões, viaturas e policial orientando o trânsito | 150+ veículos a 60 fps; trânsito desvia de um caminhão parado na Castello |
-| **7 Gameplay núcleo** | 2 | 1, 2, 3 | Relógio do jogo, fretes, economia, postos ↔ exercícios, pedágios ↔ perguntas, prova de nível, concessionária, guincho | Ciclo completo: aceitar frete → dirigir → abastecer → pedágio → entregar → subir de nível |
-| **8 Sistemas de estrada** | 2 | 6, 7 | Blitz (parada, perguntas de acompanhamento, vistorias), CNH com pontos, suspensão e curso de reciclagem, cansaço e hotel com perguntas, táxi até o hotel, borracharia, oficina, conserto por exercício de depuração, polícia em pane perigosa | Testes e2e: ser parado na blitz e errar → multa e pontos; dormir no hotel; pane na rodovia → viatura e desvio |
-| **9 UI, áudio e ambiente** | 1–2 | 7, 8 | HUD (cansaço, pneus, luzes de defeito, CNH), menus, configurações, tutorial, sons (motor, buzinas, sirene), ciclo dia/noite, acessibilidade | Jogável do menu ao fim do módulo 1 sem console aberto |
-| **10 Integração e polimento** | 1–2 | todas | Balanceamento (frequência de blitz, falhas e sono), desempenho (60 fps em notebook comum), testes e2e do ciclo completo, deploy | Release v1.0 publicado |
-| **11 Extras (opcional)** | — | 10 | Chuva, rádio, câmbio manual, conquistas, perseguição policial elaborada | — |
+| Fase                          | Sessões                    | Depende de       | Entregáveis                                                                                                                                                                                                                                   | Pronto quando                                                                                                 |
+| ----------------------------- | -------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| **0 Fundação**                | 1                          | —                | Vite + TS estrito + Three.js, ESLint/Prettier, Vitest, Playwright, CI, deploy no Pages, hook de início de sessão (instala dependências), contratos de `src/shared/`, event bus, save, cena placeholder, script `validate:content`             | `npm run lint && npm run typecheck && npm test && npm run e2e` passam; página publicada                       |
+| **1 Mapa**                    | 1–2                        | 0 + liberar rede | Pipeline OSM → JSON, malha de estradas, prédios, terreno, chunks, A*, minimapa, crédito OSM, hotéis/oficinas/borracharias/semáforos/pontos de blitz                                                                                           | Dá para "voar" pelo mapa; teste do A* entre Osasco e Caucaia do Alto                                          |
+| **2 Caminhão**                | 2                          | 0                | Física do caminhão + reboque, câmeras, controles (teclado/gamepad/volante), consumo, dano, desgaste de pneus (aderência, furo, estepe), saúde dos componentes e falhas (engasgo, motor apagando, pane), pisca-alerta                          | Dirigir numa pista de teste, engatar reboque, dar ré; testes de física, desgaste e falhas                     |
+| **3 Motor educacional**       | 1–2                        | 0                | Worker com timeout, simulador de Node, CommonJS e ESM, checagem TS, corretor com `assert`, exercícios de depuração, perguntas de acompanhamento, repetição espaçada com revisão prioritária, modal de aula/exercício com CodeMirror           | Exercícios de exemplo de JS e TS corrigidos corretamente; loop infinito é interrompido                        |
+| **4a–4d Conteúdo Node**       | 4 (M1–2, M3–4, M5–6, M7–8) | 0                | Lições, exercícios, exercícios de depuração, perguntas de checagem e de acompanhamento                                                                                                                                                        | `validate:content` passa                                                                                      |
+| **5a–5c Conteúdo TS**         | 3 (M9–10, M11–12, M13–14)  | 0                | Idem, + projeto final                                                                                                                                                                                                                         | `validate:content` passa                                                                                      |
+| **6 Trânsito**                | 2                          | 1, 2             | IA de veículos no grafo de ruas, semáforos, preferenciais, densidade por horário, spawn/despawn ao redor do jogador, reação a obstáculos e faixas bloqueadas, colisões, viaturas e policial orientando o trânsito                             | 150+ veículos a 60 fps; trânsito desvia de um caminhão parado na Castello                                     |
+| **7 Gameplay núcleo**         | 2                          | 1, 2, 3          | Relógio do jogo, fretes, economia, postos ↔ exercícios, pedágios ↔ perguntas, prova de nível, concessionária, guincho                                                                                                                         | Ciclo completo: aceitar frete → dirigir → abastecer → pedágio → entregar → subir de nível                     |
+| **8 Sistemas de estrada**     | 2                          | 6, 7             | Blitz (parada, perguntas de acompanhamento, vistorias), CNH com pontos, suspensão e curso de reciclagem, cansaço e hotel com perguntas, táxi até o hotel, borracharia, oficina, conserto por exercício de depuração, polícia em pane perigosa | Testes e2e: ser parado na blitz e errar → multa e pontos; dormir no hotel; pane na rodovia → viatura e desvio |
+| **9 UI, áudio e ambiente**    | 1–2                        | 7, 8             | HUD (cansaço, pneus, luzes de defeito, CNH), menus, configurações, tutorial, sons (motor, buzinas, sirene), ciclo dia/noite, acessibilidade                                                                                                   | Jogável do menu ao fim do módulo 1 sem console aberto                                                         |
+| **10 Integração e polimento** | 1–2                        | todas            | Balanceamento (frequência de blitz, falhas e sono), desempenho (60 fps em notebook comum), testes e2e do ciclo completo, deploy                                                                                                               | Release v1.0 publicado                                                                                        |
+| **11 Extras (opcional)**      | —                          | 10               | Chuva, rádio, câmbio manual, conquistas, perseguição policial elaborada                                                                                                                                                                       | —                                                                                                             |
 
 **Total estimado:** ~22–26 sessões, das quais até 10 podem rodar ao mesmo tempo logo após a Fase 0
 (Fases 1, 2, 3, 4a–4d e 5a–5c).
@@ -387,6 +425,7 @@ Todos começam igual:
 > e e2e. Abra um PR para o branch padrão com um resumo do que foi feito e do que ficou pendente.
 
 Complementos por fase:
+
 - **Fase 0:** "Configure também o hook SessionStart para instalar dependências nas sessões na nuvem e o
   workflow de deploy no GitHub Pages."
 - **Fase 1:** "Os domínios do OSM já estão liberados na rede do ambiente. Versione os JSON gerados em `public/map/`."
@@ -400,6 +439,7 @@ Complementos por fase:
 - **Fase 8:** "Implemente as seções 2.9 a 2.12 em cima do trânsito e do gameplay núcleo."
 
 ### 6.2 Como aproveitar bem os créditos da nuvem
+
 - **Uma fase por sessão**, com escopo fechado: sessões menores erram menos e custam menos para corrigir.
 - **Paralelize** as Fases 1–5 assim que a Fase 0 for mesclada; o conteúdo (4a–5c) é o trabalho mais
   paralelizável. As Fases 6 e 7 também podem rodar juntas.
@@ -413,13 +453,13 @@ Complementos por fase:
 
 ## 7. Riscos e mitigação
 
-| Risco | Mitigação |
-|---|---|
-| Rede da nuvem bloqueia o OSM | Liberar os domínios ou commitar o extrato bruto |
-| Desempenho do mapa real no navegador | Filtrar vias, chunks, LOD, prédios instanciados |
-| Desempenho do trânsito | Veículos só num raio ao redor do jogador, modelos instanciados, IA simplificada longe da câmera |
-| Excesso de punição deixar o jogo frustrante | Todas as frequências (blitz, falhas, sono, perguntas) em um arquivo de balanceamento; "modo instrutor" nas configurações para aliviar; avisos antecipados antes de cada penalidade |
-| Jogador travado (sem combustível, CNH suspensa, pane, sono) | Guincho, táxi até o hotel, curso de reciclagem, conserto por exercício; tentativas ilimitadas e dicas pagas |
-| Conteúdo com erro | CI valida solução × testes, starter falhando, referências entre lições, exercícios e perguntas |
-| Código do jogador travar o jogo | Worker isolado com timeout e reinício |
-| Escopo "idêntico ao ETS" grande demais | MVP nas Fases 0–10; extras na Fase 11 |
+| Risco                                                       | Mitigação                                                                                                                                                                          |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rede da nuvem bloqueia o OSM                                | Liberar os domínios ou commitar o extrato bruto                                                                                                                                    |
+| Desempenho do mapa real no navegador                        | Filtrar vias, chunks, LOD, prédios instanciados                                                                                                                                    |
+| Desempenho do trânsito                                      | Veículos só num raio ao redor do jogador, modelos instanciados, IA simplificada longe da câmera                                                                                    |
+| Excesso de punição deixar o jogo frustrante                 | Todas as frequências (blitz, falhas, sono, perguntas) em um arquivo de balanceamento; "modo instrutor" nas configurações para aliviar; avisos antecipados antes de cada penalidade |
+| Jogador travado (sem combustível, CNH suspensa, pane, sono) | Guincho, táxi até o hotel, curso de reciclagem, conserto por exercício; tentativas ilimitadas e dicas pagas                                                                        |
+| Conteúdo com erro                                           | CI valida solução × testes, starter falhando, referências entre lições, exercícios e perguntas                                                                                     |
+| Código do jogador travar o jogo                             | Worker isolado com timeout e reinício                                                                                                                                              |
+| Escopo "idêntico ao ETS" grande demais                      | MVP nas Fases 0–10; extras na Fase 11                                                                                                                                              |

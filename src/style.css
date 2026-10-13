@@ -1,0 +1,107 @@
+:root {
+  --hud-bg: rgb(12 18 28 / 0.72);
+  --hud-text: #f4f7fb;
+  --hud-muted: #a9b6c8;
+  --accent: #f5c518;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #0c121c;
+  color: var(--hud-text);
+}
+
+#game {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+
+.hud {
+  position: fixed;
+  inset: 16px 16px auto 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  pointer-events: none;
+}
+
+.hud__title,
+.hud__panel {
+  background: var(--hud-bg);
+  border-radius: 10px;
+  padding: 10px 14px;
+  backdrop-filter: blur(4px);
+}
+
+.hud__title h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+
+.hud__title p {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: var(--hud-muted);
+}
+
+.hud__panel {
+  display: grid;
+  grid-template-columns: repeat(5, auto);
+  gap: 4px 18px;
+  margin: 0;
+}
+
+.hud__panel dt {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--hud-muted);
+}
+
+.hud__panel dd {
+  margin: 0;
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.fatal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 24px;
+  text-align: center;
+  background: #0c121c;
+}
+
+.fatal[hidden] {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .hud {
+    flex-direction: column;
+  }
+
+  .hud__panel {
+    grid-template-columns: repeat(3, auto);
+  }
+}
