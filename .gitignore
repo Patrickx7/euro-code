@@ -5,6 +5,4 @@ test-results
 *.log
 .DS_Store
 
-# Assets do MakeHuman (CC0), baixados por tools/blender/personagem.py
-tools/blender/makehuman/
 __pycache__/

@@ -99,7 +99,7 @@ Os carros são gerados por script no Blender (o Blender como módulo Python):
 ```bash
 pip install bpy pillow
 python tools/blender/quadradinho.py public/models/carros/quadradinho.glb
-python tools/blender/personagem.py public/models/personagem/dev.glb
+tools/blender/build-models.sh   # carro + personagem (baixa o pacote do Kenney)
 ```
 
 ## Desenvolvimento
@@ -130,4 +130,5 @@ npm run e2e               # navegador (Playwright)
 - 3D: [Three.js](https://threejs.org) (MIT).
 - Árvores e texturas de casca, folhas, grama e terra: [EZ-Tree](https://github.com/dgreenheck/ez-tree),
   de Daniel Greenheck (MIT).
+- Personagem e carros do trânsito: [Kenney](https://www.kenney.nl) (CC0): Animated Characters 2 e Car Kit.
 - Inspiração visual: Slow Roads. Nenhum código ou asset do jogo é usado.
