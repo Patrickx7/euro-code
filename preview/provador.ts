@@ -6,6 +6,7 @@
  */
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
@@ -16,7 +17,7 @@ import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 const q = new URLSearchParams(location.search);
 const choice = {
   hair: q.get('cabelo') ?? 'curto',
-  beard: q.get('barba') ?? 'cheia',
+  beard: q.get('barba') ?? 'nenhuma',
   glasses: q.get('oculos') !== '0',
   top: q.get('roupa') ?? 'moletom',
   backpack: q.get('mochila') !== '0',
@@ -92,24 +93,26 @@ const visible = new Set<string>([
   ...(choice.backpack ? ['Backpack'] : []),
 ]);
 
-new GLTFLoader().load(new URL('../public/models/personagem/dev.glb', import.meta.url).href, (gltf) => {
-  gltf.scene.traverse((object) => {
-    // Peças com vários materiais viram vários filhos (ex.: Top_Moletom_1): vale o prefixo.
-    const variant = /^((Hair|Beard|Glasses|Top)_[A-Za-z]+|Backpack)/.exec(object.name)?.[1];
-    if (variant) object.visible = visible.has(variant);
-    if (!(object instanceof THREE.Mesh)) return;
-    object.castShadow = true;
-    object.receiveShadow = true;
-    const materials = (
-      Array.isArray(object.material) ? object.material : [object.material]
-    ) as THREE.MeshStandardMaterial[];
-    for (const m of materials) {
-      if (m.name === 'Skin' && choice.skin) m.color.set(`#${choice.skin}`);
-      if (m.name === 'Hair' && choice.hairColor) m.color.set(`#${choice.hairColor}`);
-      if (m.name === 'Top' && choice.topColor) m.color.set(`#${choice.topColor}`);
-    }
+new GLTFLoader()
+  .setMeshoptDecoder(MeshoptDecoder)
+  .load(new URL('../public/models/personagem/dev.glb', import.meta.url).href, (gltf) => {
+    gltf.scene.traverse((object) => {
+      // Peças com vários materiais viram vários filhos (ex.: Top_Moletom_1): vale o prefixo.
+      const variant = /^((Hair|Beard|Glasses|Top)_[A-Za-z]+|Backpack)/.exec(object.name)?.[1];
+      if (variant) object.visible = visible.has(variant);
+      if (!(object instanceof THREE.Mesh)) return;
+      object.castShadow = true;
+      object.receiveShadow = true;
+      const materials = (
+        Array.isArray(object.material) ? object.material : [object.material]
+      ) as THREE.MeshStandardMaterial[];
+      for (const m of materials) {
+        if (m.name === 'Skin' && choice.skin) m.color.set(`#${choice.skin}`);
+        if (m.name === 'Hair' && choice.hairColor) m.color.set(`#${choice.hairColor}`);
+        if (m.name === 'Top' && choice.topColor) m.color.set(`#${choice.topColor}`);
+      }
+    });
+    scene.add(gltf.scene);
+    composer.render();
+    document.body.dataset.ready = '1';
   });
-  scene.add(gltf.scene);
-  composer.render();
-  document.body.dataset.ready = '1';
-});

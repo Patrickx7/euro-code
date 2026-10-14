@@ -4,6 +4,7 @@
  */
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
@@ -88,24 +89,26 @@ composer.addPass(gtao);
 composer.addPass(new OutputPass());
 composer.addPass(new SMAAPass());
 
-new GLTFLoader().load(new URL(`../public/models/carros/${carName}.glb`, import.meta.url).href, (gltf) => {
-  const car = gltf.scene;
-  car.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
-    object.castShadow = true;
-    object.receiveShadow = true;
-    const materials = Array.isArray(object.material) ? object.material : [object.material];
-    for (const m of materials as THREE.MeshStandardMaterial[]) {
-      if (m.name === 'Glass' || m.name === 'Lens') {
-        m.transparent = true;
-        m.opacity = m.name === 'Lens' ? 0.25 : 0.38;
-        m.depthWrite = false;
-        m.envMapIntensity = 1.6;
+new GLTFLoader()
+  .setMeshoptDecoder(MeshoptDecoder)
+  .load(new URL(`../public/models/carros/${carName}.glb`, import.meta.url).href, (gltf) => {
+    const car = gltf.scene;
+    car.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      object.castShadow = true;
+      object.receiveShadow = true;
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      for (const m of materials as THREE.MeshStandardMaterial[]) {
+        if (m.name === 'Glass' || m.name === 'Lens') {
+          m.transparent = true;
+          m.opacity = m.name === 'Lens' ? 0.25 : 0.38;
+          m.depthWrite = false;
+          m.envMapIntensity = 1.6;
+        }
+        if (m.name === 'Paint' && paintColor) m.color.set(`#${paintColor}`);
       }
-      if (m.name === 'Paint' && paintColor) m.color.set(`#${paintColor}`);
-    }
+    });
+    scene.add(car);
+    composer.render();
+    document.body.dataset.ready = '1';
   });
-  scene.add(car);
-  composer.render();
-  document.body.dataset.ready = '1';
-});

@@ -16,6 +16,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { Tree } from '@dgreenheck/ez-tree';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { context2d, mulberry32, rand, speckle, toTexture } from './lib';
 
@@ -781,31 +782,33 @@ const carUp = new THREE.Vector3().crossVectors(right, forward).normalize();
 // O carro do estagiário, modelado no Blender (tools/blender/quadradinho.py).
 const car = new THREE.Group();
 let carReady = false;
-new GLTFLoader().load(new URL('../public/models/carros/quadradinho.glb', import.meta.url).href, (gltf) => {
-  gltf.scene.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
-    object.castShadow = true;
-    object.receiveShadow = true;
-    const materials = (
-      Array.isArray(object.material) ? object.material : [object.material]
-    ) as THREE.MeshStandardMaterial[];
-    for (const m of materials) {
-      if (m.name === 'Glass' || m.name === 'Lens') {
-        m.transparent = true;
-        m.opacity = m.name === 'Lens' ? 0.25 : 0.4;
-        m.depthWrite = false;
+new GLTFLoader()
+  .setMeshoptDecoder(MeshoptDecoder)
+  .load(new URL('../public/models/carros/quadradinho.glb', import.meta.url).href, (gltf) => {
+    gltf.scene.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      object.castShadow = true;
+      object.receiveShadow = true;
+      const materials = (
+        Array.isArray(object.material) ? object.material : [object.material]
+      ) as THREE.MeshStandardMaterial[];
+      for (const m of materials) {
+        if (m.name === 'Glass' || m.name === 'Lens') {
+          m.transparent = true;
+          m.opacity = m.name === 'Lens' ? 0.25 : 0.4;
+          m.depthWrite = false;
+        }
+        if (m.name === 'Paint') m.color.set(0x8fb0c4);
+        // A luz do céu (IBL) não sabe que o carro tem teto: por dentro ela precisa ser bem mais fraca.
+        if (['Interior', 'InteriorLight', 'Seat', 'Gauges'].includes(m.name)) m.envMapIntensity = 0.15;
+        if (dusk && m.name === 'Headlight') m.emissiveIntensity = 6;
+        if (dusk && (m.name === 'Taillight' || m.name === 'Indicator'))
+          m.emissiveIntensity = m.name === 'Taillight' ? 2.5 : 0;
       }
-      if (m.name === 'Paint') m.color.set(0x8fb0c4);
-      // A luz do céu (IBL) não sabe que o carro tem teto: por dentro ela precisa ser bem mais fraca.
-      if (['Interior', 'InteriorLight', 'Seat', 'Gauges'].includes(m.name)) m.envMapIntensity = 0.15;
-      if (dusk && m.name === 'Headlight') m.emissiveIntensity = 6;
-      if (dusk && (m.name === 'Taillight' || m.name === 'Indicator'))
-        m.emissiveIntensity = m.name === 'Taillight' ? 2.5 : 0;
-    }
+    });
+    car.add(gltf.scene);
+    carReady = true;
   });
-  car.add(gltf.scene);
-  carReady = true;
-});
 if (dusk) {
   for (const side of [-1, 1]) {
     const beam = new THREE.SpotLight(0xfff0d0, 40, 35, 0.45, 0.6, 1.5);
