@@ -11,8 +11,12 @@ import { createServer } from 'vite';
 const [outDir = 'preview-out', ...pages] = process.argv.slice(2);
 mkdirSync(outDir, { recursive: true });
 
-const server = await createServer({ server: { port: 5199, strictPort: true }, logLevel: 'error' });
+// Porta livre a cada execução: a anterior pode ainda estar sendo liberada.
+const server = await createServer({ server: { port: 0, host: '127.0.0.1' }, logLevel: 'error' });
 await server.listen();
+const address = server.httpServer?.address();
+if (!address || typeof address === 'string') throw new Error('Servidor do Vite sem porta.');
+const baseUrl = `http://127.0.0.1:${address.port}`;
 
 const cloudChromium = '/opt/pw-browsers/chromium';
 const browser = await chromium.launch({
@@ -33,7 +37,8 @@ try {
     tab.on('console', (msg) => {
       if (msg.type() === 'error') errors.push(msg.text());
     });
-    await tab.goto(`http://localhost:5199/preview/${page}`);
+    // A primeira carga pode demorar: o Vite pré-processa as dependências (o ez-tree tem 4 MB).
+    await tab.goto(`${baseUrl}/preview/${page}`, { timeout: 300_000, waitUntil: 'domcontentloaded' });
     await tab.waitForFunction(() => document.body.dataset.ready === '1', undefined, { timeout: 540_000 });
     await tab.waitForTimeout(500);
     const name = page
@@ -45,6 +50,9 @@ try {
     console.log(file, errors.length > 0 ? `ERROS: ${errors.join(' | ')}` : '');
     await tab.close();
   }
+} catch (err) {
+  console.error('Falha na captura:', err instanceof Error ? err.message : err);
+  process.exitCode = 1;
 } finally {
   await browser.close();
   await server.close();
