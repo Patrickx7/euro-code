@@ -88,6 +88,7 @@ npm run dev
 #      http://localhost:5173/preview/estilo.html?time=dusk  (crepúsculo)
 #      http://localhost:5173/preview/estilo.html?view=dentro (de dentro do carro)
 #      http://localhost:5173/preview/garagem.html?angulo=frente&cor=8fb0c4 (carro em estúdio; também tras, lado, dentro)
+#      http://localhost:5173/preview/provador.html?cabelo=cacheado&roupa=camiseta&pele=6f4430 (o dev; veja as opções no topo de preview/provador.ts)
 #      http://localhost:5173/preview/telas.html?tela=app    (também: notebook, criador)
 ```
 
@@ -98,6 +99,7 @@ Os carros são gerados por script no Blender (o Blender como módulo Python):
 ```bash
 pip install bpy pillow
 python tools/blender/quadradinho.py public/models/carros/quadradinho.glb
+python tools/blender/personagem.py public/models/personagem/dev.glb
 ```
 
 ## Desenvolvimento
