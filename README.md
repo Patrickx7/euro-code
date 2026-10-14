@@ -5,12 +5,12 @@ como **estagiário**, com um carro caindo aos pedaços, aceitando jobs ruins ("d
 centralizar uma div por R$ 35"), chega no cliente com o notebook e **coda as tasks de verdade**. Para
 crescer, aprende **HTML, CSS, JavaScript, Node.js e TypeScript**.
 
-> Status: **em desenvolvimento**. O `npm run dev` já mostra o visual do jogo: o Quadradinho rodando
-> sozinho por uma estrada em circuito no estilo Slow Roads (o mapa real de Osasco e Cotia vem depois).
-> A trilha do estagiário está escrita (HTML, CSS, layout, JavaScript e DOM: 26 lições, 62 exercícios,
-> 328 perguntas e 24 jobs), os exercícios web são corrigidos num navegador de verdade e as regras de
-> SLA e promoção estão prontas. Falta juntar tudo na jogabilidade (notebook, app de jobs, física do
-> carro). O plano detalhado está em [`PLANO.md`](PLANO.md).
+> Status: **em desenvolvimento, já jogável**. Abra o celular (`J`), aceite um job, dirija até o feixe
+> de luz do cliente (ou deixe o piloto automático levar), resolva as tasks no notebook e entregue: o
+> SLA vira estrelas e o pagamento cai na conta. O currículo está completo (19 módulos, 82 lições, 216
+> exercícios, 1089 perguntas e 76 jobs) e todos os exercícios são corrigidos de verdade (JS/TS num
+> Worker, HTML/CSS/DOM num iframe). Por enquanto a estrada é um circuito no estilo Slow Roads; o mapa
+> real de Osasco e Cotia, posto, pedágio, blitz e promoção vêm a seguir. Plano em [`PLANO.md`](PLANO.md).
 
 ![O jogo hoje: o Quadradinho na estrada, qualidade alta](preview/jogo-freela.png)
 
@@ -71,6 +71,19 @@ São modelos fictícios inspirados em carros brasileiros, sem nomes nem logos re
 **Personalização:** aparência do dev, carro (cor, rodas, adesivos, buzina), notebook (tema, fonte,
 adesivos), nome, apelido e bio.
 
+## Como jogar
+
+| Tecla                   | O que faz                                                  |
+| ----------------------- | ---------------------------------------------------------- |
+| `W` `A` `S` `D` / setas | dirigir (até tocar no teclado, o piloto automático dirige) |
+| `Espaço`                | freia (parado, engata a ré)                                |
+| `J`                     | celular: app de freelas                                    |
+| `E`                     | volta ao notebook de um job em andamento                   |
+
+No notebook: leia a task (ou a aba **Documentação**, que é a lição), edite o código, **Rodar testes**.
+Cada task resolvida avança o kanban; o cliente pode pedir "só mais uma coisinha". Com tudo feito,
+**Entregar job**. Dicas custam R$ 10.
+
 ## Visual
 
 O estilo é de "estrada aberta", com referência no Slow Roads:
@@ -113,6 +126,7 @@ tools/blender/build-models.sh   # carro + personagem (baixa o pacote do Kenney)
 ```bash
 npm install
 npm run dev               # http://localhost:5173  (?qualidade=baixa|media|alta)
+                          # ?perto: cliente logo à frente · ?job=core.m03.j01: põe um job no app
 npm run format:check
 npm run lint
 npm run typecheck

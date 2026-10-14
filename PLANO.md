@@ -1,8 +1,8 @@
 # Freela na Estrada: Plano do Projeto
 
-> **Status:** Fases 0 e 0b prontas, Fase 2 (visual) adiantada e a trilha `core` de conteúdo escrita.
-> O jogo mostra o Quadradinho numa estrada em circuito no estilo Slow Roads, com presets de qualidade.
-> Próximas: 1 (mapa), 3 (carro), 5 (notebook), conteúdo das trilhas front/back/typescript/fullstack.
+> **Status:** jogável. Fases 0, 0b e o conteúdo (6) prontos; 2 (visual), 3 (carro) e 5 (notebook) e 8
+> (gameplay) adiantadas: o ciclo app de jobs → dirigir → notebook → entrega funciona, com SLA, estrelas
+> e pagamento. Faltam: mapa real (1), posto/pedágio/entrevista/concessionária (8), blitz/sono/pane (9).
 
 Jogo de direção no navegador, ambientado em **Osasco e Cotia (SP)**. O protagonista é um **dev
 freelancer**: dirige até os clientes, chega com o notebook e **coda as tasks de verdade**. Começa como
@@ -215,21 +215,21 @@ preview/                                prévias visuais e captura de tela
 Cada fase = uma sessão em claude.ai/code neste repositório, terminando com um PR. Várias rodam em
 paralelo.
 
-| Fase                   | Conteúdo                                                                                                                                                                                                                                                                       | Depende de |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- |
-| **0 Fundação** ✅      | Vite, TS, Three.js, lint, testes, CI, contratos, runner de exercícios                                                                                                                                                                                                          | —          |
-| **0b Pivô** ✅         | Conceito Freela na Estrada, contratos novos, exercícios web, regras de carreira, carro no protótipo                                                                                                                                                                            | 0          |
-| **1 Mapa**             | Pipeline OSM, estradas, prédios, terreno, chunks, A*, minimapa, crédito OSM, pontos de interesse                                                                                                                                                                               | 0b         |
-| **2 Visual** (parcial) | ✅ estilo Slow Roads no jogo (céu, névoa, terreno, árvores EZ-Tree sob demanda, capim), presets de qualidade, carro glTF. Falta: tela de créditos, ciclo dia/noite, aplicar no mapa real                                                                                       | 0b         |
-| **3 Carro**            | Física Rapier, câmeras (perseguição, cabine), controles, consumo, desgaste, falhas, pisca-alerta                                                                                                                                                                               | 0b         |
-| **4 Personagem**       | Criador do dev (skins Kenney), animações (andar, sentar, digitar), cena de chegada no cliente                                                                                                                                                                                  | 2          |
-| **5 Notebook**         | CodeMirror, kanban, chat do cliente, preview web em iframe (mesmo runtime de `src/edu/web/`; o iframe precisa permitir ler e editar `document.styleSheets`, usado pelos testes de media query), terminal Node em Worker, temas, correção de perguntas (`src/edu/questions.ts`) | 0b         |
-| **6a–6e Conteúdo**     | ✅ core (6 módulos, 24 jobs). Faltam: front, back, typescript, fullstack, com jobs                                                                                                                                                                                             | 0b         |
-| **7 Trânsito**         | IA, semáforos, polícia orientando o trânsito em pane perigosa                                                                                                                                                                                                                  | 1, 3       |
-| **8 Gameplay**         | Dia, app de jobs, SLA, pagamento, reputação, promoção e entrevista, posto, pedágio, concessionária, personalização                                                                                                                                                             | 1, 3, 5    |
-| **9 Estrada**          | Blitz, CNH, sono (casa/hotel), pane e oficina                                                                                                                                                                                                                                  | 7, 8       |
-| **10 UI e áudio**      | HUD, menus, celular, dia/noite, sons                                                                                                                                                                                                                                           | 8, 9       |
-| **11 Integração**      | Balanceamento, desempenho, e2e do ciclo completo, release                                                                                                                                                                                                                      | todas      |
+| Fase                     | Conteúdo                                                                                                                                                                                                     | Depende de |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- |
+| **0 Fundação** ✅        | Vite, TS, Three.js, lint, testes, CI, contratos, runner de exercícios                                                                                                                                        | —          |
+| **0b Pivô** ✅           | Conceito Freela na Estrada, contratos novos, exercícios web, regras de carreira, carro no protótipo                                                                                                          | 0          |
+| **1 Mapa**               | Pipeline OSM, estradas, prédios, terreno, chunks, A*, minimapa, crédito OSM, pontos de interesse                                                                                                             | 0b         |
+| **2 Visual** (parcial)   | ✅ estilo Slow Roads no jogo (céu, névoa, terreno, árvores EZ-Tree sob demanda, capim), presets de qualidade, carro glTF. Falta: tela de créditos, ciclo dia/noite, aplicar no mapa real                     | 0b         |
+| **3 Carro** (parcial)    | ✅ física arcade (potência, peso, motor gasto), teclado, piloto automático, consumo, inclinação no terreno. Falta: câmeras extras, falhas, Rapier se precisar                                                | 0b         |
+| **4 Personagem**         | Criador do dev (skins Kenney), animações (andar, sentar, digitar), cena de chegada no cliente                                                                                                                | 2          |
+| **5 Notebook** ✅        | CodeMirror, kanban, chat do cliente, documentação (lição), prévia web em iframe isolado, console, correção JS/TS num Worker, dicas pagas, SLA ao vivo. Falta: temas/personalização e terminal interativo     | 0b         |
+| **6a–6e Conteúdo** ✅    | core (6), front (4), back (4), typescript (3), fullstack (2): 82 lições, 216 exercícios, 1089 perguntas, 76 jobs                                                                                             | 0b         |
+| **7 Trânsito**           | IA, semáforos, polícia orientando o trânsito em pane perigosa                                                                                                                                                | 1, 3       |
+| **8 Gameplay** (parcial) | ✅ app de jobs, cliente no mapa, sessão do job com imprevistos, entrega (SLA, estrelas, pagamento, carreira, save). Falta: posto, pedágio, entrevista de promoção, concessionária, personalização, dia/noite | 1, 3, 5    |
+| **9 Estrada**            | Blitz, CNH, sono (casa/hotel), pane e oficina                                                                                                                                                                | 7, 8       |
+| **10 UI e áudio**        | HUD, menus, celular, dia/noite, sons                                                                                                                                                                         | 8, 9       |
+| **11 Integração**        | Balanceamento, desempenho, e2e do ciclo completo, release                                                                                                                                                    | todas      |
 
 ### 6.1 Prompt base para cada sessão
 

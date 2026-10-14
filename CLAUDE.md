@@ -32,7 +32,9 @@ O Chromium já vem instalado nas sessões na nuvem; não rode `playwright instal
 - `src/edu/validation.ts` + `tools/validate-content.ts`: regras de qualidade do conteúdo, dos jobs e das trilhas.
 - `src/gameplay/career.ts`: SLA, estrelas, reputação, chance de promoção e escolha de trilha (funções puras).
 - `src/render/open-road/`: cena no estilo Slow Roads (relevo, estrada em circuito, vegetação em tiles, céu, névoa, pós-processamento) com presets de qualidade (`?qualidade=baixa|media|alta`). O circuito é provisório: o mapa real entra na Fase 1 e a física na Fase 3. `src/render/car.ts` carrega os carros glTF.
-- `src/edu/questions.ts`: correção das perguntas (normaliza código e saída).
+- `src/edu/questions.ts`: correção das perguntas (normaliza código e saída). `src/edu/catalog.ts`: currículo no navegador. `src/edu/worker/`: correção JS/TS num Worker; `src/edu/web/iframe-runner.ts`: exercícios web num iframe isolado.
+- `src/gameplay/`: regras puras (carreira, direção, jobs, sessão do job). `src/ui/`: celular (app de jobs), notebook (`ui/notebook/`, carregado sob demanda) e `job-controller.ts`, que liga tudo ao loop.
+- URL de teste: `?qualidade=baixa`, `?perto` (cliente logo à frente) e `?job=<id>` (põe um job no app).
 - `preview/`: prévias visuais (estrada estilo Slow Roads, garagem, provador do personagem, telas) e `capture.ts`.
 - `tools/blender/`: modelos gerados por script no Blender (`bpy`). Otimize glTF com `--palette false --join-named false` para manter os nomes de materiais e rodas.
 - Para ver o jogo rodando: `npm run dev`. Nas sessões na nuvem o WebGL roda por software (FPS baixo é esperado; use `?qualidade=baixa`, como o e2e).
