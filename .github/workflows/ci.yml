@@ -20,6 +20,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Os exercícios web (HTML/CSS/DOM) são corrigidos num Chromium de verdade, nos testes e no validador.
+      - run: npx playwright install --with-deps chromium
       - run: npm run format:check
       - run: npm run lint
       - run: npm run typecheck

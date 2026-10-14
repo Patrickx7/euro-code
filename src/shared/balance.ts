@@ -25,7 +25,8 @@ export const BALANCE = {
     hoursPerPointExpiry: 24,
   },
   economy: {
-    startingMoney: 5_000,
+    /** O estagiário começa duro. */
+    startingMoney: 300,
     hintCost: 50,
     towBaseFee: 400,
     taxiBaseFee: 80,
@@ -49,6 +50,30 @@ export const BALANCE = {
     sputterBelow: 0.5,
     stallBelow: 0.3,
     breakdownBelow: 0.1,
+  },
+  career: {
+    /** Multiplica o pagamento-base dos jobs. */
+    payMultiplier: { estagiario: 1, junior: 1.8, pleno: 3, senior: 5, fullstack: 8 },
+    /** Quantos jobs aparecem por dia no app. */
+    jobsPerDay: 5,
+    /**
+     * Faixas de SLA (tempo gasto / tempo combinado) e as estrelas correspondentes. Acima da última
+     * faixa, 1 estrela.
+     */
+    slaStars: [
+      { upTo: 0.75, stars: 5 },
+      { upTo: 1, stars: 4 },
+      { upTo: 1.25, stars: 3 },
+      { upTo: 1.6, stars: 2 },
+    ],
+    /** Quantos jobs recentes contam para a chance de efetivação/promoção. */
+    slaWindow: 10,
+    /** Jobs mínimos antes de poder pedir a entrevista para o próximo degrau. */
+    jobsForPromotion: { estagiario: 8, junior: 15, pleno: 25, senior: 40, fullstack: Infinity },
+    /** Chance de ser chamado para a entrevista quando o SLA médio está no limite (razão = 1). */
+    basePromotionChance: 0.6,
+    /** A cada 10% de atraso médio, a chance cai este tanto; a cada 10% adiantado, sobe. */
+    promotionChancePer10Percent: 0.15,
   },
   education: {
     /** Quantos exercícios recentes alimentam as perguntas da blitz. */

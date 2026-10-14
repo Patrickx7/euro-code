@@ -21,9 +21,9 @@ describe('EventBus', () => {
   it('once dispara uma única vez', () => {
     const bus = new EventBus<GameEvents>();
     const handler = vi.fn();
-    bus.once('level:up', handler);
-    bus.emit('level:up', { level: 2 });
-    bus.emit('level:up', { level: 3 });
+    bus.once('promotion:interview', handler);
+    bus.emit('promotion:interview', { to: 'junior' });
+    bus.emit('promotion:interview', { to: 'pleno' });
     expect(handler).toHaveBeenCalledOnce();
   });
 });
@@ -69,8 +69,9 @@ describe('SaveManager', () => {
   it('cria um jogo novo quando não há save', () => {
     const manager = new SaveManager(new MemoryStorage(), fixedNow);
     const save = manager.loadOrCreate();
-    expect(save.level).toBe(1);
-    expect(save.trucks).toHaveLength(1);
+    expect(save.career.seniority).toBe('estagiario');
+    expect(save.career.path).toBeNull();
+    expect(save.cars).toEqual([expect.objectContaining({ modelId: 'quadradinho' })]);
   });
 
   it('grava e lê o mesmo save', () => {
@@ -109,8 +110,11 @@ describe('SaveManager', () => {
   it('exporta e importa um save', () => {
     const manager = new SaveManager(new MemoryStorage(), fixedNow);
     const save = createNewSave();
-    save.xp = 42;
-    expect(manager.importJson(manager.exportJson(save)).xp).toBe(42);
+    save.profile.name = 'Dev Teste';
+    save.career.slaHistory.push(0.8);
+    const loaded = manager.importJson(manager.exportJson(save));
+    expect(loaded.profile.name).toBe('Dev Teste');
+    expect(loaded.career.slaHistory).toEqual([0.8]);
   });
 
   it('rejeita arquivos que não são saves', () => {

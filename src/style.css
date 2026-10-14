@@ -64,7 +64,7 @@ body {
 
 .hud__panel {
   display: grid;
-  grid-template-columns: repeat(5, auto);
+  grid-template-columns: repeat(6, auto);
   gap: 4px 18px;
   margin: 0;
 }

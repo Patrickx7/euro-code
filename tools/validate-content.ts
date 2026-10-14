@@ -2,16 +2,17 @@
  * Valida todo o conteúdo didático em `content/<trilha>/<módulo>/index.ts`.
  *
  *   npm run validate:content              # tudo
- *   npm run validate:content -- node.m03  # só os módulos cujo id começa com "node.m03"
+ *   npm run validate:content -- core.m03  # só os módulos cujo id começa com "core.m03"
  *   npm run validate:content -- --structure-only
  */
 import { existsSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { validateContent } from '../src/edu/validation';
-import type { ContentModule } from '../src/shared/content';
+import { TRACKS, type ContentModule } from '../src/shared/content';
 import { readNodeLib } from './node-lib-reader';
 import { runInRealNode } from './real-node';
+import { closeWebRunner, runWebInChromium } from './web-runner';
 
 const root = join(import.meta.dirname, '..');
 const contentDir = join(root, 'content');
@@ -28,7 +29,7 @@ async function loadModules(): Promise<ContentModule[]> {
       modules.push(loaded.default);
     }
   }
-  return modules.sort((a, b) => a.order - b.order);
+  return modules.sort((a, b) => TRACKS.indexOf(a.track) - TRACKS.indexOf(b.track) || a.order - b.order);
 }
 
 async function main() {
@@ -47,6 +48,7 @@ async function main() {
   const issues = await validateContent(all, {
     readLib: readNodeLib,
     runInRealNode,
+    runWeb: runWebInChromium,
     structureOnly,
     shouldExecute: selected,
     onProgress: () => {
@@ -65,8 +67,9 @@ async function main() {
   const lessons = all.reduce((n, m) => n + m.lessons.length, 0);
   const exercises = all.reduce((n, m) => n + m.exercises.length, 0);
   const questions = all.reduce((n, m) => n + m.questions.length, 0);
+  const jobs = all.reduce((n, m) => n + m.jobs.length, 0);
   console.log(
-    `Conteúdo: ${all.length} módulos, ${lessons} lições, ${exercises} exercícios, ${questions} perguntas.`,
+    `Conteúdo: ${all.length} módulos, ${lessons} lições, ${exercises} exercícios, ${questions} perguntas, ${jobs} jobs.`,
   );
 
   const errors = issues.filter((i) => i.severity === 'error');
@@ -78,4 +81,8 @@ async function main() {
   if (errors.length > 0) process.exitCode = 1;
 }
 
-await main();
+try {
+  await main();
+} finally {
+  await closeWebRunner();
+}

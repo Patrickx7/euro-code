@@ -5,9 +5,12 @@ como **estagiário**, com um carro caindo aos pedaços, aceitando jobs ruins ("d
 centralizar uma div por R$ 35"), chega no cliente com o notebook e **coda as tasks de verdade**. Para
 crescer, aprende **HTML, CSS, JavaScript, Node.js e TypeScript**.
 
-> Status: **em desenvolvimento**. A fundação técnica (Fase 0) está pronta e há uma prévia visual do
-> estilo do jogo. O `npm run dev` ainda mostra o protótipo antigo; o pivô para o conceito novo é o
-> próximo passo. O plano detalhado está em [`PLANO.md`](PLANO.md) (em atualização para o conceito novo).
+> Status: **em desenvolvimento**. A fundação técnica e o pivô para o conceito novo estão prontos: o
+> `npm run dev` mostra o protótipo com o carro do estagiário na estrada, os exercícios web (HTML/CSS)
+> já são corrigidos num navegador de verdade e as regras de SLA e promoção estão implementadas. Há
+> também uma prévia visual do estilo do jogo. O plano detalhado está em [`PLANO.md`](PLANO.md).
+
+![O protótipo: o Quadradinho na estrada](preview/jogo-freela.png)
 
 ## O jogo
 
@@ -22,10 +25,11 @@ crescer, aprende **HTML, CSS, JavaScript, Node.js e TypeScript**.
 
 **SLA e efetivação**
 
-- Cada task tem um tempo-alvo. Entregar dentro do SLA, sem estourar o prazo do cliente, sobe sua
-  reputação.
-- Como estagiário, o desempenho no SLA pesa na chance de ser **efetivado** como Júnior. Ficar muito
-  abaixo dificulta a efetivação.
+- Cada job tem um SLA: o tempo, contado da chegada no cliente, para entregar todas as tasks. Quanto
+  mais adiantado, mais estrelas (5 se usar até 75% do tempo; 1 se passar de 160%).
+- Os últimos 10 jobs definem a chance de ser chamado para a **entrevista** do próximo degrau: 60% com o
+  SLA no limite, subindo ou caindo 15 pontos a cada 10% adiantado ou atrasado. Ficar muito abaixo do
+  SLA dificulta a efetivação.
 
 **Senioridade e trilhas**
 
@@ -50,17 +54,17 @@ crescer, aprende **HTML, CSS, JavaScript, Node.js e TypeScript**.
 
 **Carros**
 
-São modelos fictícios inspirados em carros brasileiros, sem nomes nem logos reais. Os nomes ainda são
-provisórios.
+São modelos fictícios inspirados em carros brasileiros, sem nomes nem logos reais.
 
-| Inspirado em     | No jogo         | Senioridade  |
-| ---------------- | --------------- | ------------ |
-| Uno              | Quadradinho 1.0 | Estagiário   |
-| Gol              | Bolinha         | Júnior       |
-| Vectra           | Vetor           | Pleno        |
-| Versa            | Verso           | Pleno/Sênior |
-| BYD Dolphin Mini | Golfinho Mini   | Sênior       |
-| BYD Song         | Canção          | Full Stack   |
+| Inspirado em     | No jogo         | Senioridade | Modelo 3D        |
+| ---------------- | --------------- | ----------- | ---------------- |
+| Uno              | Quadradinho 1.0 | Estagiário  | pronto (Blender) |
+| Gol quadrado     | Quadradão 1.6   | Júnior      | pronto (HanabLS) |
+| Opala            | Safira 4.1      | Pleno       | pronto (HanabLS) |
+| Vectra           | Vetor 2.0       | Pleno       | a fazer          |
+| Versa            | Verso 1.6       | Sênior      | a fazer          |
+| BYD Dolphin Mini | Golfinho Mini   | Sênior      | a fazer          |
+| BYD Song         | Canção Híbrido  | Full Stack  | a fazer          |
 
 **Personalização:** aparência do dev, carro (cor, rodas, adesivos, buzina), notebook (tema, fonte,
 adesivos), nome, apelido e bio.
@@ -88,7 +92,7 @@ npm run dev
 #      http://localhost:5173/preview/estilo.html?time=dusk  (crepúsculo)
 #      http://localhost:5173/preview/estilo.html?view=dentro (de dentro do carro)
 #      http://localhost:5173/preview/garagem.html?angulo=frente&cor=8fb0c4 (carro em estúdio; também tras, lado, dentro)
-#      http://localhost:5173/preview/provador.html?cabelo=cacheado&roupa=camiseta&pele=6f4430 (o dev; veja as opções no topo de preview/provador.ts)
+#      http://localhost:5173/preview/provador.html?skin=devMale&anim=Run (o dev; anim: Idle, Run, Jump)
 #      http://localhost:5173/preview/telas.html?tela=app    (também: notebook, criador)
 ```
 
@@ -120,7 +124,9 @@ npm run e2e               # navegador (Playwright)
 | `src/shared/`           | contratos entre os módulos e `balance.ts` (todos os números de balanceamento)                       |
 | `src/core/`             | barramento de eventos, loop do jogo, save                                                           |
 | `src/edu/runner/`       | executor de exercícios que imita o Node (fs, path, events, assert, timers) e checa tipos TypeScript |
-| `src/edu/validation.ts` | regras de qualidade do conteúdo (`content/README.md` explica como escrever)                         |
+| `src/edu/web/`          | runtime dos exercícios web (HTML/CSS/DOM), rodados no Chromium pelo validador                       |
+| `src/edu/validation.ts` | regras de qualidade do conteúdo e dos jobs (`content/README.md` explica como escrever)              |
+| `src/gameplay/`         | regras de carreira: SLA, estrelas, reputação e promoção                                             |
 | `preview/`              | prévias visuais (estrada, rua e telas) e o script de captura                                        |
 | `tools/blender/`        | carros modelados por script no Blender, exportados em glTF para `public/models/`                    |
 
@@ -131,4 +137,6 @@ npm run e2e               # navegador (Playwright)
 - Árvores e texturas de casca, folhas, grama e terra: [EZ-Tree](https://github.com/dgreenheck/ez-tree),
   de Daniel Greenheck (MIT).
 - Personagem e carros do trânsito: [Kenney](https://www.kenney.nl) (CC0): Animated Characters 2 e Car Kit.
+- Quadradão e Safira: modelos do HanabLS, renomeados. Licença não declarada: precisa da autorização do
+  autor antes de publicar o jogo (detalhes em `public/models/carros/CREDITOS.md`).
 - Inspiração visual: Slow Roads. Nenhum código ou asset do jogo é usado.

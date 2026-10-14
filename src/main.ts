@@ -5,8 +5,10 @@ import { SaveManager } from './core/save-manager';
 import { createPlaceholderScene } from './render/placeholder-scene';
 import { BALANCE } from './shared/balance';
 import type { GameEvents } from './shared/events';
+import { SENIORITY_LABEL } from './shared/profile';
+import { findCarModel } from './shared/vehicle';
 
-const CRUISE_SPEED_KMH = 70;
+const CRUISE_SPEED_KMH = 60;
 
 function element<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
@@ -32,14 +34,18 @@ function start() {
   const hud = {
     clock: element('hud-clock'),
     speed: element('hud-speed'),
-    level: element('hud-level'),
+    seniority: element('hud-seniority'),
+    car: element('hud-car'),
     money: element('hud-money'),
     fps: element('hud-fps'),
   };
 
+  const save = new SaveManager().loadOrCreate();
+  const activeCar = save.cars[save.activeCarIndex];
+
   let scene;
   try {
-    scene = createPlaceholderScene(canvas);
+    scene = createPlaceholderScene(canvas, { paint: activeCar?.customization.paint ?? '8fb0c4' });
   } catch {
     const fatal = element('fatal');
     fatal.textContent = 'Seu navegador não conseguiu iniciar o WebGL, necessário para o jogo.';
@@ -47,9 +53,9 @@ function start() {
     return;
   }
 
-  const save = new SaveManager().loadOrCreate();
   const bus = new EventBus<GameEvents>();
-  hud.level.textContent = String(save.level);
+  hud.seniority.textContent = SENIORITY_LABEL[save.career.seniority];
+  hud.car.textContent = (activeCar && findCarModel(activeCar.modelId)?.name) ?? '—';
   hud.money.textContent = money.format(save.money);
 
   const resize = () => scene.resize(window.innerWidth, window.innerHeight);

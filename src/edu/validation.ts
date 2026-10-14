@@ -1,10 +1,20 @@
 /**
- * Regras de qualidade do conteúdo didático (PLANO.md, seção 5.1).
+ * Regras de qualidade do conteúdo didático e dos jobs (PLANO.md).
  * Rodadas pela CI com `npm run validate:content`.
  */
-import type { ContentModule, Exercise, Lesson, Question } from '../shared/content';
+import {
+  DEFAULT_WEB_VIEWPORT,
+  TRACK_PREREQUISITES,
+  type ContentModule,
+  type Exercise,
+  type Lesson,
+  type Question,
+} from '../shared/content';
+import type { JobTemplate } from '../shared/jobs';
+import { SENIORITIES, seniorityRank } from '../shared/profile';
 import type { LibReader } from './runner/compile';
 import { runExercise, runScript } from './runner/run-exercise';
+import type { WebRunner } from './web/types';
 
 export interface ValidationIssue {
   severity: 'error' | 'warning';
@@ -26,12 +36,27 @@ export interface ValidationOptions {
   shouldExecute?: (module: ContentModule) => boolean;
   /** Avisado a cada item executado (para mostrar progresso). */
   onProgress?: (id: string) => void;
+  /** Roda exercícios web num navegador de verdade. Sem ele, os exercícios web só têm a estrutura checada. */
+  runWeb?: WebRunner;
 }
 
 export const MIN_GENERAL_QUESTIONS_PER_LESSON = 6;
 export const MIN_FOLLOW_UPS_PER_EXERCISE = 2;
 
-const MODULE_ID = /^(node|typescript)\.m\d{2}$/;
+const MODULE_ID = /^(core|front|back|typescript|fullstack)\.m\d{2}$/;
+
+/**
+ * O que é ensinado em `target` pode ser cobrado em `from`? Só se a trilha de `target` é pré-requisito
+ * da trilha de `from` e, na mesma trilha, se `target` não vem depois.
+ */
+export function canReference(from: ContentModule, target: ContentModule): boolean {
+  if (!TRACK_PREREQUISITES[from.track].includes(target.track)) return false;
+  return target.track !== from.track || target.order <= from.order;
+}
+
+function notStudiedYet(id: string, owner: ContentModule): string {
+  return `${id} é de ${owner.id}, que o jogador ainda não estudou neste ponto.`;
+}
 
 export async function validateContent(
   modules: ContentModule[],
@@ -45,8 +70,10 @@ export async function validateContent(
   const lessons = new Map<string, { lesson: Lesson; module: ContentModule }>();
   const exercises = new Map<string, { exercise: Exercise; module: ContentModule }>();
   const questions = new Map<string, { question: Question; module: ContentModule }>();
+  const jobs = new Map<string, { job: JobTemplate; module: ContentModule }>();
   const seenIds = new Set<string>();
-  const seenOrders = new Map<number, string>();
+  /** "trilha:ordem" → id do módulo. */
+  const seenOrders = new Map<string, string>();
   const claimId = (id: string) => {
     if (seenIds.has(id))
       error(id, 'Id repetido. Todo id (módulo, lição, exercício, pergunta) deve ser único.');
@@ -56,12 +83,16 @@ export async function validateContent(
   for (const module of modules) {
     claimId(module.id);
     if (!MODULE_ID.test(module.id))
-      error(module.id, 'Id de módulo deve seguir o formato "node.m01" ou "typescript.m09".');
+      error(module.id, 'Id de módulo deve seguir o formato "core.m01", "front.m02", "typescript.m01"...');
     if (!module.id.startsWith(`${module.track}.`))
       error(module.id, `O id não combina com a trilha "${module.track}".`);
-    const otherWithOrder = seenOrders.get(module.order);
-    if (otherWithOrder) error(module.id, `A ordem ${module.order} já é usada por ${otherWithOrder}.`);
-    seenOrders.set(module.order, module.id);
+    if (!(SENIORITIES as readonly string[]).includes(module.seniority))
+      error(module.id, `Senioridade desconhecida: "${module.seniority}".`);
+    const orderKey = `${module.track}:${module.order}`;
+    const otherWithOrder = seenOrders.get(orderKey);
+    if (otherWithOrder)
+      error(module.id, `A ordem ${module.order} da trilha ${module.track} já é usada por ${otherWithOrder}.`);
+    seenOrders.set(orderKey, module.id);
 
     for (const lesson of module.lessons) {
       claimId(lesson.id);
@@ -74,6 +105,10 @@ export async function validateContent(
     for (const question of module.questions) {
       claimId(question.id);
       questions.set(question.id, { question, module });
+    }
+    for (const job of module.jobs) {
+      claimId(job.id);
+      jobs.set(job.id, { job, module });
     }
   }
 
@@ -133,6 +168,12 @@ export async function validateContent(
       const list = exercise.kind === 'debug' ? owner.debugExerciseIds : owner.exerciseIds;
       if (!list.includes(exercise.id)) error(where, `A lição ${owner.id} não lista este exercício.`);
     }
+    if (exercise.language === 'web') {
+      if (exercise.editableFiles.length === 0)
+        error(where, 'O exercício web precisa de pelo menos 1 arquivo editável em editableFiles.');
+      const { width, height } = exercise.viewport ?? DEFAULT_WEB_VIEWPORT;
+      if (!(width > 0 && height > 0)) error(where, 'O viewport precisa ter largura e altura positivas.');
+    }
     if (exercise.tests.length === 0) error(where, 'O exercício precisa de pelo menos 1 teste.');
     if (exercise.hints.length === 0) error(where, 'O exercício precisa de pelo menos 1 dica.');
     if (exercise.followUpQuestionIds.length < MIN_FOLLOW_UPS_PER_EXERCISE) {
@@ -159,9 +200,8 @@ export async function validateContent(
     for (const id of question.lessonIds) {
       const owner = lessons.get(id);
       if (!owner) error(where, `Lição inexistente: ${id}.`);
-      else if (owner.module.order > module.order) {
-        error(where, `A lição ${id} é de um módulo posterior; o jogador ainda não a estudou.`);
-      }
+      else if (!canReference(module, owner.module))
+        error(where, `A lição ${notStudiedYet(id, owner.module)}`);
     }
     if (question.exerciseId !== undefined) {
       const ex = exercises.get(question.exerciseId)?.exercise;
@@ -193,12 +233,88 @@ export async function validateContent(
     }
   }
 
+  // ---- jobs ----
+  for (const { job, module } of jobs.values()) {
+    const where = job.id;
+    if (!job.id.startsWith(`${module.id}.j`)) error(where, `O id do job deve começar com "${module.id}.j".`);
+    if (job.moduleId !== module.id) error(where, `moduleId deveria ser "${module.id}".`);
+    if (!job.title.trim() || !job.briefMarkdown.trim()) error(where, 'O job precisa de título e briefing.');
+    if (!job.client.name.trim() || !job.client.contact.trim())
+      error(where, 'O cliente precisa de nome e de uma pessoa de contato.');
+    if (!(SENIORITIES as readonly string[]).includes(job.seniority))
+      error(where, `Senioridade desconhecida: "${job.seniority}".`);
+    else if (seniorityRank(job.seniority) < seniorityRank(module.seniority)) {
+      error(
+        where,
+        `O job aparece para "${job.seniority}", mas o módulo ${module.id} só é estudado em "${module.seniority}".`,
+      );
+    }
+    if (
+      (module.track === 'front' || module.track === 'back') &&
+      job.path !== undefined &&
+      job.path !== module.track
+    )
+      error(where, `Um job da trilha ${module.track} não pode ser exclusivo de "${job.path}".`);
+    if (!(job.pay > 0)) error(where, 'O pagamento precisa ser maior que zero.');
+    if (!(job.slaMinutes > 0)) error(where, 'O SLA precisa ser maior que zero.');
+    if (job.taskExerciseIds.length === 0) error(where, 'O job precisa de pelo menos 1 task.');
+    if (job.chat.arrival.length === 0 || job.chat.delivery.length === 0)
+      error(where, 'O chat do cliente precisa de falas na chegada e na entrega.');
+
+    const checkExercise = (id: string, label: string) => {
+      const target = exercises.get(id);
+      if (!target) error(where, `${label} inexistente: ${id}.`);
+      else if (!canReference(module, target.module))
+        error(where, `O exercício ${notStudiedYet(id, target.module)}`);
+    };
+    for (const id of job.taskExerciseIds) checkExercise(id, 'Task');
+    for (const [index, twist] of (job.twists ?? []).entries()) {
+      if (
+        !Number.isInteger(twist.afterTask) ||
+        twist.afterTask < 0 ||
+        twist.afterTask >= job.taskExerciseIds.length
+      )
+        error(
+          where,
+          `O imprevisto ${index + 1} acontece depois de uma task que não existe (${twist.afterTask}).`,
+        );
+      if (!twist.message.trim())
+        error(where, `O imprevisto ${index + 1} precisa de uma mensagem do cliente.`);
+      if (twist.extraPay < 0 || twist.extraSlaMinutes < 0)
+        error(where, `O imprevisto ${index + 1} não pode ter pagamento ou SLA extra negativos.`);
+      checkExercise(twist.extraExerciseId, `Task extra do imprevisto ${index + 1}`);
+    }
+  }
+
   if (options.structureOnly) return issues;
   const execute = (module: ContentModule) => options.shouldExecute?.(module) ?? true;
 
   // ---- execução ----
+  let warnedNoWebRunner = false;
   for (const { exercise, module } of exercises.values()) {
     if (!execute(module)) continue;
+    if (exercise.language === 'web') {
+      if (!options.runWeb) {
+        if (!warnedNoWebRunner)
+          warn(exercise.id, 'Exercícios web não foram executados (o validador não recebeu um navegador).');
+        warnedNoWebRunner = true;
+        continue;
+      }
+      options.onProgress?.(exercise.id);
+      const viewport = exercise.viewport ?? DEFAULT_WEB_VIEWPORT;
+      const solution = await options.runWeb(exercise.solutionFiles, exercise.tests, viewport);
+      if (!solution.passed) {
+        const problems = [
+          ...solution.pageErrors.map((e) => `erro na página: ${e}`),
+          ...solution.tests.filter((t) => !t.passed).map((t) => `teste "${t.description}": ${t.message}`),
+        ];
+        error(exercise.id, `A solução não passa:\n    - ${problems.join('\n    - ')}`);
+      }
+      const starter = await options.runWeb(exercise.starterFiles, exercise.tests, viewport);
+      if (starter.passed)
+        error(exercise.id, 'O código inicial já passa em todos os testes; o exercício não ensina nada.');
+      continue;
+    }
     options.onProgress?.(exercise.id);
     const run = (code: string) => runExercise(exercise, code, { readLib: options.readLib });
     const solution = await run(exercise.solution);

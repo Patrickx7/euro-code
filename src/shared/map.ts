@@ -5,10 +5,11 @@ export type RoadKind =
 
 export type PoiKind =
   | 'fuel'
-  | 'company'
-  | 'dealer'
-  | 'garage'
-  | 'exam-center'
+  | 'client-office'
+  | 'coworking'
+  | 'home'
+  | 'car-dealer'
+  | 'interview-center'
   | 'hotel'
   | 'mechanic'
   | 'tire-shop'

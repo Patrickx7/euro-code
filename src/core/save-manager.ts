@@ -31,8 +31,8 @@ export function parseSave(json: string): SaveData {
   const save = data as SaveData;
   if (
     typeof save.money !== 'number' ||
-    typeof save.level !== 'number' ||
-    !Array.isArray(save.trucks) ||
+    typeof save.career !== 'object' ||
+    !Array.isArray(save.cars) ||
     typeof save.education !== 'object'
   ) {
     throw new SaveFormatError('O save está incompleto ou corrompido.');

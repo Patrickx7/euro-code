@@ -7,10 +7,11 @@ PY="${PYTHON:-python3}"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-# Carro do estagiário: modelado por script e comprimido com meshopt.
+# Carro do estagiário: modelado por script e comprimido com meshopt. Sem paleta e sem juntar objetos
+# com nome: o jogo procura os materiais (Paint, Glass...) e as rodas (Wheel_FL...) pelo nome.
 "$PY" tools/blender/quadradinho.py "$TMP/raw.glb"
 npx --yes @gltf-transform/cli@4.5.1 optimize "$TMP/raw.glb" public/models/carros/quadradinho.glb \
-  --compress meshopt --texture-compress false --simplify-error 0.0004
+  --compress meshopt --texture-compress false --simplify-error 0.0004 --palette false --join-named false
 
 # Personagem: "Animated Characters 2" do Kenney (CC0), convertido com as animações.
 curl -sSL -o "$TMP/ac2.zip" https://opengameart.org/sites/default/files/kenney_animated-characters-2.zip

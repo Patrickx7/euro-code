@@ -1,5 +1,5 @@
 /** Corrige um exercício: checa tipos (TS), roda cada teste num sandbox novo e junta o resultado. */
-import type { CodeLanguage, Exercise } from '../../shared/content';
+import type { CodeExercise, CodeLanguage } from '../../shared/content';
 import { typecheck, transpile, type CodeDiagnostic, type LibReader } from './compile';
 import { runInSandbox, type ScriptOutcome } from './sandbox';
 
@@ -20,7 +20,7 @@ export interface ExerciseRunResult {
   tests: TestResult[];
 }
 
-export type ExerciseSpec = Pick<Exercise, 'language' | 'tests' | 'extraFiles' | 'fsSeed' | 'argv'>;
+export type ExerciseSpec = Pick<CodeExercise, 'language' | 'tests' | 'extraFiles' | 'fsSeed' | 'argv'>;
 
 export interface RunExerciseOptions {
   /** Necessário para exercícios TypeScript. */
@@ -151,7 +151,7 @@ export async function runExercise(
 export function runScript(
   code: string,
   language: CodeLanguage,
-  options: Partial<Pick<Exercise, 'extraFiles' | 'fsSeed' | 'argv'>> & { timeoutMs?: number } = {},
+  options: Partial<Pick<CodeExercise, 'extraFiles' | 'fsSeed' | 'argv'>> & { timeoutMs?: number } = {},
 ): Promise<ScriptOutcome> {
   return runInSandbox(code, { mainFile: mainFileFor(language), ...options });
 }

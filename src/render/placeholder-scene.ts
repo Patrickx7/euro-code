@@ -1,8 +1,10 @@
 /**
- * Cena provisória da Fase 0: estrada sem fim, um caminhão simples e câmera de perseguição.
- * Será substituída pelo mapa real (Fase 1) e pelo caminhão com física (Fase 2).
+ * Cena provisória: estrada sem fim, o carro do estagiário e câmera de perseguição.
+ * Será substituída pelo mapa real (Fase 1), pelo visual da Fase 2 e pelo carro com física (Fase 3).
  */
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 
 const ROAD_WIDTH = 12;
 const TILE_LENGTH = 40;
@@ -17,39 +19,64 @@ export interface PlaceholderScene {
   dispose(): void;
 }
 
-function createTruck(): { group: THREE.Group; wheels: THREE.Mesh[] } {
+interface Car {
+  group: THREE.Group;
+  /** Rodas que giram (o eixo de cada uma é o Z local). */
+  wheels: THREE.Object3D[];
+  wheelRadius: number;
+}
+
+/**
+ * O carro do estagiário (Quadradinho, `public/models/carros/quadradinho.glb`). Enquanto o modelo
+ * carrega, aparece uma silhueta simples. No glTF a frente do carro aponta para +X.
+ */
+function createCar(paint: string): Car {
   const group = new THREE.Group();
-  const cabMaterial = new THREE.MeshStandardMaterial({ color: 0x1f6feb, roughness: 0.5, metalness: 0.2 });
-  const trailerMaterial = new THREE.MeshStandardMaterial({ color: 0xe6e6e6, roughness: 0.8 });
-  const darkMaterial = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9 });
-  const glassMaterial = new THREE.MeshStandardMaterial({ color: 0x9fd3ff, roughness: 0.1, metalness: 0.5 });
+  // Gira o carro para a frente apontar para -Z, o sentido da estrada.
+  group.rotation.y = Math.PI / 2;
+  const car: Car = { group, wheels: [], wheelRadius: 0.29 };
 
-  const cab = new THREE.Mesh(new THREE.BoxGeometry(2.5, 2.6, 2.4), cabMaterial);
-  cab.position.set(0, 2.1, -6.2);
-  const windshield = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.0, 0.05), glassMaterial);
-  windshield.position.set(0, 2.7, -7.42);
-  const chassis = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.4, 14), darkMaterial);
-  chassis.position.set(0, 0.9, 0);
-  const trailer = new THREE.Mesh(new THREE.BoxGeometry(2.6, 3.0, 11), trailerMaterial);
-  trailer.position.set(0, 2.7, 1.2);
-  group.add(cab, windshield, chassis, trailer);
+  const standIn = new THREE.Mesh(
+    new THREE.BoxGeometry(3.6, 1.2, 1.6),
+    new THREE.MeshStandardMaterial({ color: `#${paint}`, roughness: 0.6 }),
+  );
+  standIn.position.y = 0.75;
+  standIn.castShadow = true;
+  group.add(standIn);
 
-  const wheels: THREE.Mesh[] = [];
-  const wheelGeometry = new THREE.CylinderGeometry(0.55, 0.55, 0.45, 20);
-  wheelGeometry.rotateZ(Math.PI / 2);
-  for (const z of [-6.2, -1, 3.2, 4.6]) {
-    for (const x of [-1.2, 1.2]) {
-      const wheel = new THREE.Mesh(wheelGeometry, darkMaterial);
-      wheel.position.set(x, 0.55, z);
-      wheels.push(wheel);
-      group.add(wheel);
-    }
-  }
-  for (const mesh of group.children) {
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-  }
-  return { group, wheels };
+  new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).load(
+    `${import.meta.env.BASE_URL}models/carros/quadradinho.glb`,
+    (gltf) => {
+      gltf.scene.traverse((object) => {
+        if (/^Wheel_(FL|FR|RL|RR)$/.test(object.name)) car.wheels.push(object);
+        if (!(object instanceof THREE.Mesh)) return;
+        object.castShadow = true;
+        object.receiveShadow = true;
+        const materials = (
+          Array.isArray(object.material) ? object.material : [object.material]
+        ) as THREE.MeshStandardMaterial[];
+        for (const m of materials) {
+          if (m.name === 'Paint') m.color.set(`#${paint}`);
+          if (m.name === 'Glass' || m.name === 'Lens') {
+            m.transparent = true;
+            m.opacity = m.name === 'Lens' ? 0.25 : 0.4;
+            m.depthWrite = false;
+          }
+        }
+      });
+      const firstWheel = car.wheels[0];
+      if (firstWheel) {
+        const size = new THREE.Box3().setFromObject(firstWheel).getSize(new THREE.Vector3());
+        car.wheelRadius = size.y / 2;
+      }
+      group.remove(standIn);
+      group.add(gltf.scene);
+      document.body.dataset.carLoaded = 'true';
+    },
+    undefined,
+    (err) => console.warn('Não foi possível carregar o modelo do carro.', err),
+  );
+  return car;
 }
 
 function createRoadTile(): THREE.Group {
@@ -122,7 +149,15 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-export function createPlaceholderScene(canvas: HTMLCanvasElement): PlaceholderScene {
+export interface PlaceholderSceneOptions {
+  /** Cor da pintura do carro, em hexadecimal sem "#" (`CarCustomization.paint`). */
+  paint: string;
+}
+
+export function createPlaceholderScene(
+  canvas: HTMLCanvasElement,
+  options: PlaceholderSceneOptions,
+): PlaceholderScene {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
@@ -160,13 +195,13 @@ export function createPlaceholderScene(canvas: HTMLCanvasElement): PlaceholderSc
   const scenery = createScenery();
   scene.add(scenery);
 
-  const { group: truck, wheels } = createTruck();
-  truck.position.x = ROAD_WIDTH / 4;
-  scene.add(truck);
+  const car = createCar(options.paint);
+  car.group.position.x = ROAD_WIDTH / 4;
+  scene.add(car.group);
 
-  const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 1000);
-  camera.position.set(ROAD_WIDTH / 4 + 4, 7, 20);
-  camera.lookAt(truck.position.x, 2.5, -8);
+  const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 1000);
+  camera.position.set(ROAD_WIDTH / 4 + 2.2, 2.6, 7.5);
+  camera.lookAt(car.group.position.x, 0.9, -3);
 
   const wrapLength = TILE_LENGTH * TILE_COUNT;
   let elapsed = 0;
@@ -175,7 +210,7 @@ export function createPlaceholderScene(canvas: HTMLCanvasElement): PlaceholderSc
     update(dt, speed) {
       elapsed += dt;
       const distance = speed * dt;
-      // O caminhão fica parado na origem e o mundo se move para trás.
+      // O carro fica parado na origem e o mundo se move para trás.
       for (const tile of tiles) {
         tile.position.z += distance;
         if (tile.position.z > TILE_LENGTH * 2) tile.position.z -= wrapLength;
@@ -184,8 +219,9 @@ export function createPlaceholderScene(canvas: HTMLCanvasElement): PlaceholderSc
         item.position.z += distance;
         if (item.position.z > TILE_LENGTH * 2) item.position.z -= wrapLength;
       }
-      for (const wheel of wheels) wheel.rotation.x -= distance / 0.55;
-      truck.position.y = Math.sin(elapsed * 9) * 0.02;
+      for (const wheel of car.wheels) wheel.rotation.z -= distance / car.wheelRadius;
+      // Suspensão cansada de carro de estagiário.
+      car.group.position.y = Math.sin(elapsed * 9) * 0.012;
     },
     render() {
       renderer.render(scene, camera);
