@@ -125,7 +125,8 @@ export function autopilot(state: DriveState, target: { x: number; z: number }, c
   error = Math.atan2(Math.sin(error), Math.cos(error));
   return {
     throttle: state.speed < cruise ? Math.min(1, (cruise - state.speed) * 0.5 + 0.3) : 0,
-    brake: state.speed > cruise + 3 ? 0.3 : 0,
+    // Freia na medida do excesso (sem chegar a engatar a ré: abaixo de cruise + 0,5 não freia).
+    brake: state.speed > cruise + 0.5 ? Math.min(1, (state.speed - cruise) * 0.3) : 0,
     steer: Math.max(-1, Math.min(1, error * 2.5)),
   };
 }

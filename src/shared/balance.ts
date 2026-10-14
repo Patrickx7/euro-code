@@ -8,6 +8,8 @@ export const BALANCE = {
     gameMinutesPerRealMinute: 10,
     /** Hora em que um jogo novo começa. */
     startHour: 7,
+    /** No notebook o relógio anda mais devagar (o SLA fica justo para quem está aprendendo). */
+    codingTimeScale: 0.5,
   },
   fatigue: {
     /** Horas de jogo dirigindo até o cansaço chegar a 100%. */
@@ -27,7 +29,8 @@ export const BALANCE = {
   economy: {
     /** O estagiário começa duro. */
     startingMoney: 300,
-    hintCost: 50,
+    /** Uma dica no notebook. Jobs de estagiário pagam R$ 25 a R$ 130. */
+    hintCost: 10,
     towBaseFee: 400,
     taxiBaseFee: 80,
     hotelNight: 150,
@@ -74,6 +77,12 @@ export const BALANCE = {
     basePromotionChance: 0.6,
     /** A cada 10% de atraso médio, a chance cai este tanto; a cada 10% adiantado, sobe. */
     promotionChancePer10Percent: 0.15,
+  },
+  jobs: {
+    /** Distância (pela estrada) até o cliente, sorteada entre estes valores. */
+    clientDistanceM: [500, 1800],
+    /** Quão perto do cliente é preciso parar para atender. */
+    arrivalRadiusM: 14,
   },
   education: {
     /** Quantos exercícios recentes alimentam as perguntas da blitz. */

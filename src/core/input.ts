@@ -10,14 +10,31 @@ const KEYS = {
 
 const HANDLED = new Set<string>(Object.values(KEYS).flat());
 
+/** Digitando num campo ou no editor do notebook, as teclas não dirigem o carro. */
+function isTyping(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+}
+
 export class KeyboardDriveInput {
   private readonly pressed = new Set<string>();
   /** Se o jogador já tocou no teclado (antes disso, o carro pode ir no piloto automático). */
   touched = false;
+  private active = true;
+
+  /** Desligado enquanto o celular ou o notebook estão abertos. */
+  get enabled(): boolean {
+    return this.active;
+  }
+
+  set enabled(value: boolean) {
+    this.active = value;
+    if (!value) this.pressed.clear();
+  }
 
   constructor(target: Window = window) {
     target.addEventListener('keydown', (event) => {
-      if (!HANDLED.has(event.code)) return;
+      if (!this.enabled || !HANDLED.has(event.code) || isTyping(event.target)) return;
       event.preventDefault();
       this.pressed.add(event.code);
       this.touched = true;
@@ -32,6 +49,7 @@ export class KeyboardDriveInput {
   }
 
   read(): DriveInput {
+    if (!this.enabled) return { throttle: 0, brake: 0, steer: 0 };
     return {
       throttle: this.any(KEYS.throttle) ? 1 : 0,
       brake: this.any(KEYS.brake) ? 1 : 0,

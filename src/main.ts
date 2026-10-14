@@ -1,4 +1,5 @@
 import './style.css';
+import './ui/ui.css';
 import { EventBus } from './core/event-bus';
 import { GameLoop } from './core/game-loop';
 import { KeyboardDriveInput } from './core/input';
@@ -10,6 +11,7 @@ import { BALANCE } from './shared/balance';
 import type { GameEvents } from './shared/events';
 import { SENIORITY_LABEL } from './shared/profile';
 import { findCarModel } from './shared/vehicle';
+import { JobController } from './ui/job-controller';
 
 /** Velocidade do piloto automático, antes de o jogador pegar no volante. */
 const AUTOPILOT_KMH = 60;
@@ -47,7 +49,8 @@ function start() {
     fps: element('hud-fps'),
   };
 
-  const save = new SaveManager().loadOrCreate();
+  const saveManager = new SaveManager();
+  const save = saveManager.loadOrCreate();
   const activeCar = save.cars[save.activeCarIndex];
 
   const carModel = findCarModel(activeCar?.modelId ?? '');
@@ -88,6 +91,32 @@ function start() {
   let drive: DriveState = { ...world.startPose(), speed: 0, steer: 0 };
   let lowFuelWarned = false;
 
+  const jobs = new JobController({
+    save,
+    saveManager,
+    bus,
+    scene,
+    overlay: element('overlay'),
+    hud: element('job-hud'),
+    onOverlayChange: (open) => {
+      input.enabled = !open;
+    },
+    onSaveChange: () => {
+      hud.money.textContent = money.format(save.money);
+      hud.seniority.textContent = SENIORITY_LABEL[save.career.seniority];
+    },
+  });
+  element('phone-button').addEventListener('click', () => jobs.togglePhone());
+
+  /** Piloto automático: segura a velocidade e, com um cliente à frente, para no feixe de luz. */
+  const autopilotSpeed = () => {
+    const ahead = jobs.clientAhead(drive.x, drive.z);
+    const cruise = AUTOPILOT_KMH / 3.6;
+    if (ahead === null) return cruise;
+    // Velocidade que ainda dá para parar a tempo, freando a 2,5 m/s².
+    return Math.min(cruise, Math.sqrt(2 * 2.5 * Math.max(0, ahead - 4)));
+  };
+
   const showFuel = () => {
     if (!activeCar || !carModel) return;
     if (carModel.tankLiters === 0) {
@@ -107,13 +136,18 @@ function start() {
   const loop = new GameLoop({
     update(dt) {
       if (physics && activeCar && carModel) {
-        const command = input.touched
-          ? input.read()
-          : autopilot(drive, world.laneTarget(drive.x, drive.z, 14), AUTOPILOT_KMH / 3.6);
+        const command =
+          input.touched || jobs.overlayOpen
+            ? input.read()
+            : autopilot(drive, world.laneTarget(drive.x, drive.z, 14), autopilotSpeed());
+
         // Tanque vazio: o motor não responde (no futuro, o posto exige um exercício).
         if (carModel.tankLiters > 0 && activeCar.fuelLiters <= 0) command.throttle = 0;
         const surface = world.surfaceAt(drive.x, drive.z);
-        const next = stepCar(drive, command, dt, physics, surface);
+        // Celular ou notebook abertos: o carro fica estacionado.
+        const next = jobs.overlayOpen
+          ? { ...drive, speed: 0, steer: 0 }
+          : stepCar(drive, command, dt, physics, surface);
         // Limite do mundo: o carro para na borda do terreno.
         if (Math.max(Math.abs(next.x), Math.abs(next.z)) > world.halfSize) {
           next.x = drive.x;
@@ -136,8 +170,9 @@ function start() {
           bus.emit('fuel:low', { liters: activeCar.fuelLiters });
         }
         scene.update(dt, { x: drive.x, z: drive.z, heading: drive.heading, moved });
+        jobs.update(drive);
       }
-      save.gameMinutes += dt * gameMinutesPerSecond;
+      save.gameMinutes += dt * gameMinutesPerSecond * jobs.timeScale;
       const minute = Math.floor(save.gameMinutes);
       if (minute !== lastMinute) {
         lastMinute = minute;

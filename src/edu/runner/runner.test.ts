@@ -165,6 +165,15 @@ describe('runScript', () => {
     expect(outcome.stdout).toEqual(['acabou', 'a', 'b']);
   });
 
+  it('o jogador pode declarar o próprio assert', async () => {
+    const outcome = await runScript(
+      `const assert = require('assert');\nassert.strictEqual(1 + 1, 2);\nconsole.log('ok');`,
+      'js',
+    );
+    expect(outcome.error).toBeNull();
+    expect(outcome.stdout).toEqual(['ok']);
+  });
+
   it('process.env guarda tudo como texto', async () => {
     const outcome = await runScript(`process.env.PRECO = 90; console.log(typeof process.env.PRECO);`, 'js');
     expect(outcome.stdout).toEqual(['string']);

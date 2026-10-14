@@ -91,3 +91,19 @@ describe('autopilot', () => {
     expect(state.speed).toBeLessThan(18);
   });
 });
+
+describe('autopilot parando', () => {
+  it('freia até parar quando a velocidade-alvo cai para zero, sem engatar a ré', () => {
+    let state = drive(full, 8);
+    for (let t = 0; t < 20; t += 1 / 60) {
+      state = stepCar(
+        state,
+        autopilot(state, { x: state.x + 100, z: state.z }, 0),
+        1 / 60,
+        carPhysics(quadradinho),
+        onRoad,
+      );
+    }
+    expect(state.speed).toBe(0);
+  });
+});

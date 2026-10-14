@@ -128,3 +128,16 @@ async function run(
 }
 
 window.__freela = { run, errors: pageErrors };
+
+// No jogo, a página roda num iframe isolado e recebe os testes por mensagem.
+window.addEventListener('message', (event: MessageEvent<unknown>) => {
+  const data = event.data as { type?: unknown; nonce?: unknown; tests?: unknown } | null;
+  if (data?.type !== 'freela:run' || !Array.isArray(data.tests)) return;
+  const tests = data.tests as { description: string; code: string }[];
+  void run(tests).then((results) => {
+    window.parent.postMessage(
+      { type: 'freela:results', nonce: data.nonce, results, errors: pageErrors },
+      '*',
+    );
+  });
+});

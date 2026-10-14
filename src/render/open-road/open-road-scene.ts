@@ -17,6 +17,7 @@ import { createComposer } from './post';
 import { QUALITY_PRESETS } from './quality';
 import { LANE_OFFSET, RoadLoop, type RoadFrame } from './road';
 import { buildRoadMesh } from './road-mesh';
+import { ClientMarker } from './client-marker';
 import { buildPowerLine } from './roadside';
 import { buildTerrain, createTerrainMaterial } from './terrain';
 import { DistanceCuller } from './tiles';
@@ -31,6 +32,12 @@ export interface DrivingWorld {
   laneTarget(x: number, z: number, ahead: number): { x: number; z: number };
   /** Metade do lado do terreno: o carro não sai daí. */
   halfSize: number;
+  /** Comprimento do circuito, em metros. */
+  roadLength: number;
+  /** Quantos metros, pela estrada, desde o início do circuito até o trecho mais próximo de (x, z). */
+  roadDistance(x: number, z: number): number;
+  /** Ponto ao lado da estrada: `lateral` metros à direita do centro, a `distance` metros do início. */
+  pointOnRoad(distance: number, lateral: number): { x: number; z: number };
 }
 
 export interface CarPose {
@@ -44,6 +51,8 @@ export interface CarPose {
 
 export interface GameScene {
   world: DrivingWorld;
+  /** Mostra (ou esconde, com `null`) o marcador do cliente. */
+  setClientMarker(marker: { x: number; z: number; name: string } | null): void;
   /** Posiciona o carro e a câmera. */
   update(dtSeconds: number, pose: CarPose): void;
   render(): void;
@@ -109,6 +118,8 @@ export function createOpenRoadScene(canvas: HTMLCanvasElement, options: OpenRoad
 
   const car = loadCar(options.carModelFile, options.paint, options.onCarLoaded);
   scene.add(car.group);
+  const marker = new ClientMarker();
+  scene.add(marker.group);
 
   const composer: EffectComposer | null = preset.post
     ? createComposer(renderer, scene, camera, { bloom: preset.bloom, tint: GOLDEN_HOUR.tint })
@@ -129,6 +140,15 @@ export function createOpenRoadScene(canvas: HTMLCanvasElement, options: OpenRoad
       return { x: p.x, z: p.z };
     },
     halfSize: TERRAIN_SIZE / 2 - 60,
+    roadLength: road.length,
+    roadDistance(x, z) {
+      return (road.nearest(x, z).index / road.points.length) * road.length;
+    },
+    pointOnRoad(distance, lateral) {
+      const frame = road.frameAt(distance, laneFrame);
+      const p = frame.position.addScaledVector(frame.right, lateral);
+      return { x: p.x, z: p.z };
+    },
   };
   const laneFrame: RoadFrame = road.frameAt(0);
 
@@ -193,7 +213,16 @@ export function createOpenRoadScene(canvas: HTMLCanvasElement, options: OpenRoad
 
   return {
     world,
+    setClientMarker(target) {
+      if (!target) {
+        marker.hide();
+        return;
+      }
+      const y = surfaceAt(road, target.x, target.z).y;
+      marker.show(new THREE.Vector3(target.x, y, target.z), target.name);
+    },
     update(dt, pose) {
+      marker.update(dt);
       car.roll(pose.moved);
       placeCar(pose);
       placeCamera(dt);

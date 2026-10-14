@@ -3,28 +3,17 @@
  * testes. O runtime de testes (`src/edu/web/page-runtime.ts`) é empacotado com esbuild.
  */
 import { chromium, type Browser } from '@playwright/test';
-import { buildSync } from 'esbuild';
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import { buildWebPage } from '../src/edu/web/page';
 import type { WebRunner } from '../src/edu/web/types';
+import { bundlePageRuntime } from './page-runtime-bundle';
 
 const CLOUD_CHROMIUM = '/opt/pw-browsers/chromium';
 let runtimeScript: string | null = null;
 let browserPromise: Promise<Browser> | null = null;
 
 export function pageRuntimeScript(): string {
-  if (runtimeScript === null) {
-    const result = buildSync({
-      entryPoints: [join(import.meta.dirname, '..', 'src', 'edu', 'web', 'page-runtime.ts')],
-      bundle: true,
-      format: 'iife',
-      target: 'es2022',
-      write: false,
-      minify: true,
-    });
-    runtimeScript = result.outputFiles[0]?.text ?? '';
-  }
+  runtimeScript ??= bundlePageRuntime();
   return runtimeScript;
 }
 

@@ -383,7 +383,8 @@ export async function runInSandbox(source: string, options: SandboxOptions): Pro
   try {
     let main: Promise<unknown>;
     try {
-      main = new AsyncFunction(...Object.keys(scope), wrapBody(compiled.code, compiled.strict))(
+      // O bloco deixa o jogador declarar nomes que o ambiente injeta (ex.: `const assert = require('assert')`).
+      main = new AsyncFunction(...Object.keys(scope), wrapBody(`{\n${compiled.code}\n}`, compiled.strict))(
         ...Object.values(scope),
       );
     } catch (err) {

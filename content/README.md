@@ -150,6 +150,15 @@ Módulos disponíveis no simulador: `fs` (em memória; use `fsSeed` para criar a
 Em exercícios TypeScript, os tipos são checados de verdade (modo `strict`). Para exigir que um uso
 errado **não compile**, use `// @ts-expect-error` no teste.
 
+### Dicas para exercícios TypeScript
+
+- A linha marcada com `// @ts-expect-error` **também roda**. Se a chamada errada quebraria em tempo de
+  execução, embrulhe numa função que nunca é chamada:
+  `const usoErrado = () => {\n  // @ts-expect-error\n  calcular('3');\n};`
+- "Cannot find name" também conta como erro esperado: num código inicial em que o tipo ainda não existe,
+  um teste só de `@ts-expect-error` passa sozinho. Combine com testes de execução.
+- Só o primeiro erro de tipo de cada teste é mostrado ao jogador.
+
 ## Limitações do simulador (evite em perguntas "qual a saída?")
 
 - `console.log` de objetos grandes, que o Node quebraria em várias linhas ou colunas;
