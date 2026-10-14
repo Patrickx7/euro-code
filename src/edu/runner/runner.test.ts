@@ -144,6 +144,39 @@ describe('runScript', () => {
     expect(outcome.stdout).toEqual(['antes']);
   });
 
+  it('process.exit pego por um catch continua encerrando o programa', async () => {
+    const outcome = await runScript(
+      `try { process.exit(2); } catch { console.log('escapei'); }\nconsole.log('depois');`,
+      'js',
+    );
+    expect(outcome.exitCode).toBe(2);
+    expect(outcome.stdout).toEqual([]);
+  });
+
+  it('espera as Promises pendentes, mesmo com timers um depois do outro', async () => {
+    const code = [
+      'const esperar = (ms) => new Promise((r) => setTimeout(r, ms));',
+      "async function main() { await esperar(5); console.log('a'); await esperar(5); console.log('b'); }",
+      'main();',
+      'async function f(n) { if (n === 0) return; await null; return f(n - 1); }',
+      "f(30).then(() => console.log('acabou'));",
+    ].join('\n');
+    const outcome = await runScript(code, 'js');
+    expect(outcome.stdout).toEqual(['acabou', 'a', 'b']);
+  });
+
+  it('process.env guarda tudo como texto', async () => {
+    const outcome = await runScript(`process.env.PRECO = 90; console.log(typeof process.env.PRECO);`, 'js');
+    expect(outcome.stdout).toEqual(['string']);
+  });
+
+  it('avisa quando falta o "./" num arquivo do projeto', async () => {
+    const outcome = await runScript(`require('formatar');`, 'js', {
+      extraFiles: { 'formatar.js': 'module.exports = 1;' },
+    });
+    expect(outcome.error).toMatch(/require\('\.\/formatar'\)/);
+  });
+
   it('setInterval esquecido estoura o tempo', async () => {
     const outcome = await runScript(`setInterval(() => {}, 10);`, 'js', { timeoutMs: 200 });
     expect(outcome.timedOut).toBe(true);
@@ -186,6 +219,12 @@ describe('runExercise', () => {
     const result = await runExercise(somaFrete, 'function somaFrete(a, b) { return a - b; }');
     expect(result.passed).toBe(false);
     expect(result.tests[0]?.message).toBe('Esperava 150, mas recebeu 50.');
+  });
+
+  it('process.exit no meio não deixa o teste passar sem rodar', async () => {
+    const result = await runExercise(somaFrete, 'function somaFrete(a, b) { process.exit(0); }');
+    expect(result.passed).toBe(false);
+    expect(result.tests[0]?.message).toMatch(/process\.exit\(0\) antes de o teste acabar/);
   });
 
   it('erro de sintaxe no código do jogador', async () => {

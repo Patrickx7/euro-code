@@ -65,6 +65,13 @@ describe('runWebInChromium (exercícios web)', { timeout: 60_000 }, () => {
     expect(result.tests[0]?.message).toMatch(/^O JavaScript da página deu erro: ReferenceError/);
   });
 
+  it('Promise rejeitada sem tratamento conta como erro da página', async () => {
+    const files: WebFiles = { ...centered, js: "Promise.reject(new Error('API fora do ar'));" };
+    const result = await runWebInChromium(files, centerTests, DEFAULT_WEB_VIEWPORT);
+    expect(result.pageErrors).toEqual(['Error: API fora do ar']);
+    expect(result.passed).toBe(false);
+  });
+
   it('um código que fecha a tag <script> não quebra a página', async () => {
     const tricky: WebFiles = { ...centered, js: "const s = '</script><p>oi</p>';" };
     const result = await runWebInChromium(tricky, centerTests, DEFAULT_WEB_VIEWPORT);

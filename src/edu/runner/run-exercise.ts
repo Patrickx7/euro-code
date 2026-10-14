@@ -123,7 +123,7 @@ export async function runExercise(
 
   const tests: TestResult[] = [];
   for (const [index, test] of spec.tests.entries()) {
-    const outcome: ScriptOutcome = await runInSandbox(`${code}\n;\n{\n${test.code}\n}\n`, {
+    const outcome: ScriptOutcome = await runInSandbox(`${code}\n;\n{\n${test.code}\n}\n__reachedEnd();\n`, {
       mainFile,
       extraFiles: spec.extraFiles,
       fsSeed: spec.fsSeed,
@@ -131,10 +131,15 @@ export async function runExercise(
       timeoutMs: options.timeoutMs,
     });
     const typeError = testTypeErrors.get(index)?.[0];
+    // process.exit() no meio do código ou do teste encerra tudo antes de o teste terminar.
+    const cutShort =
+      outcome.error === null && !outcome.reachedEnd
+        ? `O programa terminou com process.exit(${outcome.exitCode}) antes de o teste acabar.`
+        : null;
     tests.push({
       description: test.description,
-      passed: outcome.error === null && typeError === undefined,
-      message: outcome.error ?? (typeError ? describeTestTypeError(typeError) : undefined),
+      passed: outcome.error === null && cutShort === null && typeError === undefined,
+      message: outcome.error ?? cutShort ?? (typeError ? describeTestTypeError(typeError) : undefined),
       stdout: outcome.stdout,
     });
   }

@@ -76,6 +76,13 @@ window.addEventListener('error', (event) => {
     event.error instanceof Error ? `${event.error.name}: ${event.error.message}` : event.message,
   );
 });
+// Promise rejeitada sem ninguém tratar (um `fetch` sem try/catch, por exemplo) também é erro da página.
+window.addEventListener('unhandledrejection', (event) => {
+  const reason: unknown = event.reason;
+  pageErrors.push(
+    reason instanceof Error ? `${reason.name}: ${reason.message}` : `Promise rejeitada: ${String(reason)}`,
+  );
+});
 
 const AsyncFunction = (async () => {
   await Promise.resolve();

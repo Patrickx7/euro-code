@@ -31,6 +31,8 @@ export interface ScriptOutcome {
   compileErrors: CodeDiagnostic[];
   exitCode: number;
   timedOut: boolean;
+  /** Se o script chamou `__reachedEnd()` (o corretor usa para saber se o teste rodou até o fim). */
+  reachedEnd: boolean;
   files: Record<string, string>;
 }
 
@@ -64,7 +66,12 @@ export async function runInSandbox(source: string, options: SandboxOptions): Pro
   const buffers = { out: '', err: '' };
   let groupIndent = '';
 
+  let exited = false;
+  /** Se a execução chegou ao fim do script (quem roda os testes chama `__reachedEnd()` no final). */
+  let reachedEnd = false;
   const writeRaw = (stream: 'out' | 'err', text: string) => {
+    // Depois de process.exit(), o processo morreu: nada mais é impresso (mesmo se um catch pegou o sinal).
+    if (exited) return;
     buffers[stream] += text;
     const parts = buffers[stream].split('\n');
     buffers[stream] = parts.pop() ?? '';
@@ -88,8 +95,19 @@ export async function runInSandbox(source: string, options: SandboxOptions): Pro
   let exitCode: number | null = null;
   let onIdle: (() => void) | null = null;
 
+  const isIdle = () => timers.size === 0 || hasUncaught || exitCode !== null;
+  let idleCheckPending = false;
+  /**
+   * O "processo" termina quando não há mais timers. A conferência espera a fila de microtarefas
+   * esvaziar (um `await` pendente ainda pode criar timers ou imprimir algo), como o Node.
+   */
   const checkIdle = () => {
-    if (onIdle && (timers.size === 0 || hasUncaught || exitCode !== null)) onIdle();
+    if (!onIdle || idleCheckPending || !isIdle()) return;
+    idleCheckPending = true;
+    globalThis.setTimeout(() => {
+      idleCheckPending = false;
+      if (onIdle && isIdle()) onIdle();
+    }, 0);
   };
   const handleThrown = (err: unknown) => {
     if (err instanceof ExitSignal) {
@@ -204,11 +222,23 @@ export async function runInSandbox(source: string, options: SandboxOptions): Pro
   // ---- process ----
   const processObject = {
     argv: [NODE_PATH, options.mainFile, ...(options.argv ?? [])],
-    env: {} as Record<string, string | undefined>,
+    // No Node, tudo que entra em process.env vira texto.
+    env: new Proxy<Record<string, string | undefined>>(
+      {},
+      {
+        set(target, key, value) {
+          target[key as string] = String(value);
+          return true;
+        },
+      },
+    ),
     exitCode: undefined as number | undefined,
     platform: 'linux',
     exit(code?: number): never {
-      throw new ExitSignal(code ?? processObject.exitCode ?? 0);
+      const finalCode = code ?? processObject.exitCode ?? 0;
+      exitCode ??= finalCode;
+      exited = true;
+      throw new ExitSignal(finalCode);
     },
     cwd: () => SANDBOX_CWD,
     nextTick: (cb: (...args: unknown[]) => void, ...args: unknown[]) =>
@@ -260,12 +290,13 @@ export async function runInSandbox(source: string, options: SandboxOptions): Pro
         const file = resolveFile(fromDir, name);
         if (file) return loadExtraModule(file);
       }
-      const err = new Error(
-        `Cannot find module '${name}'` +
-          (/^[a-z]/.test(name)
-            ? ` (no simulador do jogo só existem: ${Object.keys(builtins).join(', ')})`
-            : ''),
-      ) as Error & { code: string };
+      const localWithoutDot = /^[a-z]/i.test(name) && resolveFile(fromDir, `./${name}`) !== undefined;
+      const hint = localWithoutDot
+        ? ` (para arquivos do projeto, comece com "./": require('./${name}'))`
+        : /^[a-z]/.test(name)
+          ? ` (no simulador do jogo só existem: ${Object.keys(builtins).join(', ')})`
+          : '';
+      const err = new Error(`Cannot find module '${name}'${hint}`) as Error & { code: string };
       err.code = 'MODULE_NOT_FOUND';
       throw err;
     };
@@ -317,6 +348,7 @@ export async function runInSandbox(source: string, options: SandboxOptions): Pro
       compileErrors,
       exitCode: exitCode ?? (error ? 1 : (processObject.exitCode ?? 0)),
       timedOut,
+      reachedEnd,
       files: memfs.snapshot(),
     };
   };
@@ -338,6 +370,9 @@ export async function runInSandbox(source: string, options: SandboxOptions): Pro
     assert: createAssert(true),
     __logs: outLines,
     __errors: errLines,
+    __reachedEnd: () => {
+      reachedEnd = true;
+    },
   };
 
   let timeoutHandle: ReturnType<typeof globalThis.setTimeout> | undefined;

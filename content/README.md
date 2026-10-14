@@ -114,6 +114,23 @@ Se o JavaScript da página der erro, todos os testes falham com a mensagem do er
 }
 ```
 
+### Dicas para exercícios web (aprendidas escrevendo as trilhas core e front)
+
+- Os testes de um exercício compartilham a mesma página: o estado de um teste passa para o próximo.
+- Erros do JavaScript da página **e Promises rejeitadas sem tratamento** fazem todos os testes falharem.
+- Formulário: se o código do jogador não chamar `preventDefault()`, um submit de verdade navega e
+  derruba a página. Dispare um evento sintético (`form.dispatchEvent(new Event('submit', { cancelable:
+true }))`) e confira `defaultPrevented`.
+- Para testar lógica com dados novos, peça uma função com nome (ex.: `formatarTelefone`) e chame-a no
+  teste; assim respostas "chumbadas" não passam.
+- Não há rede: para `fetch`, coloque uma API falsa num `<script>` no `html` (que roda antes do JS do
+  jogador) e registre as chamadas em `window.__chamadas`.
+- Media queries: teste ligando e desligando as regras (`cssRules[i].media.mediaText = 'not all'`), ou
+  use um `viewport` próprio no exercício.
+- `KeyboardEvent` sintético não aciona o clique padrão de um botão; `el.focus()` ativa `:focus-visible`.
+- Exemplos de aula que usam o DOM devem ser `language: 'html'` (exemplos `'js'` rodam no simulador de
+  Node, onde não existe `document`).
+
 ## Como os testes de JS/TS rodam
 
 O código do jogador e o `code` de cada teste rodam juntos, no mesmo escopo, num ambiente que imita o
@@ -139,7 +156,9 @@ errado **não compile**, use `// @ts-expect-error` no teste.
 - `console.log` de um `Error` (o Node imprime a pilha de chamadas);
 - ordem entre `process.nextTick` e Promises, e entre `setImmediate` e `setTimeout(..., 0)`;
 - estado de uma `Promise` impressa com `console.log` (sempre aparece `<pending>`);
-- `readFileSync` sem encoding devolve texto, não `Buffer`.
+- `readFileSync` sem encoding devolve texto, não `Buffer`;
+- `readdirSync` devolve os nomes em ordem alfabética (no Node a ordem não é garantida);
+- código com `require(` não é comparado com o Node real (só roda no simulador).
 
 O validador compara com o Node real e acusa quando a saída diverge.
 
