@@ -15,6 +15,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { Tree } from '@dgreenheck/ez-tree';
 import { buildCar } from './car';
 import { context2d, mulberry32, rand, speckle, toTexture } from './lib';
 
@@ -204,11 +205,55 @@ scene.add(new THREE.HemisphereLight(MOOD.hemiSky, MOOD.hemiGround, MOOD.hemiInte
 
 // ---------- terreno ----------
 
-const grassA = new THREE.Color(0x7c8a4a);
-const grassB = new THREE.Color(0x9a9455);
-const dryGrass = new THREE.Color(0xb59e68);
-const redEarth = new THREE.Color(0x9e5a3e);
-const rock = new THREE.Color(0x7d6a5c);
+const textureLoader = new THREE.TextureLoader();
+function photo(file: string, color = true): THREE.Texture {
+  const texture = textureLoader.load(new URL(`./assets/${file}`, import.meta.url).href);
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.anisotropy = 8;
+  if (color) texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+const grassPhoto = photo('grass.jpg');
+const dirtPhoto = photo('dirt_color.jpg');
+
+/**
+ * Terreno com textura fotográfica: grama e terra misturadas por vértice (atributo `dirt`) e tingidas
+ * pela cor de vértice (capim seco, terra vermelha, pedra). Duas escalas de grama quebram a repetição.
+ */
+const terrainMaterial = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 });
+terrainMaterial.onBeforeCompile = (shader) => {
+  shader.uniforms.grassMap = { value: grassPhoto };
+  shader.uniforms.dirtMap = { value: dirtPhoto };
+  shader.vertexShader = shader.vertexShader
+    .replace(
+      '#include <common>',
+      '#include <common>\nattribute float dirt;\nvarying float vDirt;\nvarying vec3 vGround;',
+    )
+    .replace(
+      '#include <begin_vertex>',
+      '#include <begin_vertex>\nvDirt = dirt;\nvGround = (modelMatrix * vec4(position, 1.0)).xyz;',
+    );
+  shader.fragmentShader = shader.fragmentShader
+    .replace(
+      '#include <common>',
+      '#include <common>\nuniform sampler2D grassMap;\nuniform sampler2D dirtMap;\nvarying float vDirt;\nvarying vec3 vGround;',
+    )
+    .replace(
+      '#include <map_fragment>',
+      `
+      vec3 grassNear = texture2D(grassMap, vGround.xz / 5.0).rgb;
+      vec3 grassFar = texture2D(grassMap, vGround.xz / 37.0).rgb;
+      vec3 dirtTex = texture2D(dirtMap, vGround.xz / 3.5).rgb;
+      vec3 grass = mix(grassNear, grassFar, 0.35);
+      diffuseColor.rgb *= mix(grass, dirtTex, clamp(vDirt, 0.0, 1.0)) * 2.2;
+      `,
+    );
+};
+
+const white = new THREE.Color(1, 1, 1);
+const dryTint = new THREE.Color(1.25, 1.05, 0.72);
+const redTint = new THREE.Color(1.45, 0.78, 0.55);
+const rockTint = new THREE.Color(0.95, 0.9, 0.85);
 const tmp = new THREE.Color();
 
 function buildTerrain(
@@ -221,17 +266,19 @@ function buildTerrain(
   geometry.rotateX(-Math.PI / 2);
   const pos = geometry.getAttribute('position');
   const colors = new Float32Array(pos.count * 3);
+  const dirt = new Float32Array(pos.count);
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i);
     const z = pos.getZ(i);
     pos.setY(i, height(x, z));
-    tmp.copy(grassA).lerp(grassB, fbm(x / 50, z / 50, 3));
-    const dry = fbm(x / 200 + 40, z / 200, 2);
-    tmp.lerp(dryGrass, Math.min(1, Math.max(0, (dry - 0.4) * 2.5)));
+    const dry = fbm(x / 180 + 40, z / 180, 2);
+    tmp.copy(white).lerp(dryTint, Math.min(1, Math.max(0, (dry - 0.35) * 2.2)));
+    tmp.multiplyScalar(0.85 + fbm(x / 40, z / 40, 2) * 0.3);
     if (nearRoad) {
       const { dist } = nearestRoad(x, z);
-      if (dist < ROAD_HALF + 4) tmp.lerp(redEarth, 0.9);
-      else if (dist < ROAD_HALF + 10) tmp.lerp(redEarth, 0.5 * (1 - (dist - ROAD_HALF - 4) / 6));
+      const shoulder = dist < ROAD_HALF + 3.5 ? 1 : Math.max(0, 1 - (dist - ROAD_HALF - 3.5) / 7);
+      dirt[i] = shoulder;
+      tmp.lerp(redTint, shoulder * 0.9);
     }
     colors.set([tmp.r, tmp.g, tmp.b], i * 3);
   }
@@ -240,12 +287,15 @@ function buildTerrain(
   const normals = geometry.getAttribute('normal');
   for (let i = 0; i < pos.count; i++) {
     const slope = 1 - normals.getY(i);
-    if (slope > 0.18) {
-      tmp.fromArray(colors, i * 3).lerp(slope > 0.4 ? rock : redEarth, Math.min(1, (slope - 0.18) * 2.5));
+    if (slope > 0.16) {
+      const k = Math.min(1, (slope - 0.16) * 3);
+      dirt[i] = Math.max(dirt[i] ?? 0, k);
+      tmp.fromArray(colors, i * 3).lerp(slope > 0.4 ? rockTint : redTint, k);
       colors.set([tmp.r, tmp.g, tmp.b], i * 3);
     }
   }
-  const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 }));
+  geometry.setAttribute('dirt', new THREE.BufferAttribute(dirt, 1));
+  const mesh = new THREE.Mesh(geometry, terrainMaterial);
   mesh.receiveShadow = true;
   scene.add(mesh);
   return mesh;
@@ -431,18 +481,22 @@ const vistaEye = carPoint.clone().addScaledVector(forward, -70).addScaledVector(
 /** Na vista do alto, nada de árvores na frente da câmera. */
 const clear = (x: number, z: number) => view !== 'vista' || Math.hypot(x - vistaEye.x, z - vistaEye.z) > 75;
 const nearTrees = (dist: number) => dist > ROAD_HALF + 10;
+const NEAR_RADIUS = 320;
+const isNear = (x: number, z: number) => Math.hypot(x - carPoint.x, z - carPoint.z) < NEAR_RADIUS;
+/** As árvores simples só aparecem longe, onde a névoa esconde os detalhes. */
+const far = (x: number, z: number) => !isNear(x, z);
 // Talhões de pinus e eucalipto, comuns entre Cotia e Caucaia do Alto.
 scatter(
   pine,
   5000,
-  (x, z, d) => clear(x, z) && nearTrees(d) && fbm(x / 260 + 300, z / 260) > 0.55,
+  (x, z, d) => clear(x, z) && far(x, z) && nearTrees(d) && fbm(x / 260 + 300, z / 260) > 0.55,
   [0x2c3b26, 0x33452b, 0x283622],
   [0.8, 1.3],
 );
 scatter(
   eucalyptus,
   1800,
-  (x, z, d) => clear(x, z) && nearTrees(d) && fbm(x / 240 + 100, z / 240 - 60) > 0.6,
+  (x, z, d) => clear(x, z) && far(x, z) && nearTrees(d) && fbm(x / 240 + 100, z / 240 - 60) > 0.6,
   [0x48523f, 0x515c46, 0x434d3a],
   [0.8, 1.1],
 );
@@ -450,14 +504,14 @@ scatter(
 scatter(
   broadleaf,
   6000,
-  (x, z, d) => clear(x, z) && nearTrees(d) && fbm(x / 200 - 50, z / 200 + 9) > 0.5,
+  (x, z, d) => clear(x, z) && far(x, z) && nearTrees(d) && fbm(x / 200 - 50, z / 200 + 9) > 0.5,
   [0x34452a, 0x3d4f2e, 0x475a33],
   [0.7, 1.25],
 );
 scatter(
   broadleaf,
   900,
-  (x, z, d) => clear(x, z) && nearTrees(d) && rand() < 0.25,
+  (x, z, d) => clear(x, z) && far(x, z) && nearTrees(d) && rand() < 0.25,
   [0x3d4f2e, 0x4a5c35],
   [0.6, 1.1],
 );
@@ -465,11 +519,120 @@ scatter(
 scatter(
   bush,
   5000,
-  (x, z, d) => clear(x, z) && (d < 120 || rand() < 0.2),
+  (x, z, d) => clear(x, z) && far(x, z) && (d < 120 || rand() < 0.2),
   [0x3b4228, 0x464a2c, 0x343b25, 0x50502f],
   [0.5, 1.3],
   TERRAIN * 0.6,
   false,
+);
+
+// Árvores de verdade perto da estrada: casca e folhas fotográficas (ez-tree, licença MIT).
+function variant(preset: string, seed: number, tweak?: (tree: Tree) => void): Tree {
+  const tree = new Tree();
+  tree.loadPreset(preset);
+  tree.options.seed = seed;
+  tweak?.(tree);
+  tree.generate();
+  return tree;
+}
+
+function plantForest(
+  variants: Tree[],
+  count: number,
+  accept: (x: number, z: number, dist: number) => boolean,
+  height: [number, number],
+  leafTints: number[],
+) {
+  const m = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const s = new THREE.Vector3();
+  const p = new THREE.Vector3();
+  const axis = new THREE.Vector3(0, 1, 0);
+  const color = new THREE.Color();
+  for (const tree of variants) {
+    const box = new THREE.Box3().setFromObject(tree);
+    const treeHeight = Math.max(0.01, box.max.y - box.min.y);
+    const leafSource = tree.leavesMesh.material as THREE.MeshPhongMaterial;
+    const leaves = new THREE.MeshStandardMaterial({
+      map: leafSource.map,
+      alphaTest: leafSource.alphaTest,
+      side: THREE.DoubleSide,
+      roughness: 0.75,
+    });
+    const leafDepth = new THREE.MeshDepthMaterial({
+      depthPacking: THREE.RGBADepthPacking,
+      map: leafSource.map,
+      alphaTest: leafSource.alphaTest,
+    });
+    const per = Math.ceil(count / variants.length);
+    const trunks = new THREE.InstancedMesh(tree.branchesMesh.geometry, tree.branchesMesh.material, per);
+    const crowns = new THREE.InstancedMesh(tree.leavesMesh.geometry, leaves, per);
+    crowns.customDepthMaterial = leafDepth;
+    let placed = 0;
+    for (let tries = 0; placed < per && tries < per * 60; tries++) {
+      const angle = rand() * Math.PI * 2;
+      const r = Math.sqrt(rand()) * NEAR_RADIUS;
+      const x = carPoint.x + Math.cos(angle) * r;
+      const z = carPoint.z + Math.sin(angle) * r;
+      const { dist } = nearestRoad(x, z);
+      if (dist < ROAD_HALF + 6 || !clear(x, z) || !accept(x, z, dist)) continue;
+      p.set(x, terrainHeight(x, z) - 0.3, z);
+      q.setFromAxisAngle(axis, rand() * Math.PI * 2);
+      const k = (height[0] + rand() * (height[1] - height[0])) / treeHeight;
+      s.set(k, k, k);
+      m.compose(p, q, s);
+      trunks.setMatrixAt(placed, m);
+      crowns.setMatrixAt(placed, m);
+      crowns.setColorAt(placed, color.set(leafTints[Math.floor(rand() * leafTints.length)] ?? 0xffffff));
+      placed++;
+    }
+    trunks.count = crowns.count = placed;
+    for (const mesh of [trunks, crowns]) {
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+    }
+  }
+}
+
+// Mata Atlântica: copas largas, verde escuro.
+plantForest(
+  [variant('Oak Medium', 11), variant('Ash Large', 12), variant('Ash Medium', 13), variant('Oak Large', 14)],
+  260,
+  (x, z) => fbm(x / 200 - 50, z / 200 + 9) > 0.45 || rand() < 0.12,
+  [9, 16],
+  [0x8fb06a, 0x7da05c, 0x9ab877, 0x6f9450],
+);
+// Pinus em talhões.
+plantForest(
+  [variant('Pine Large', 21), variant('Pine Medium', 22)],
+  200,
+  (x, z) => fbm(x / 260 + 300, z / 260) > 0.52,
+  [14, 22],
+  [0xffffff, 0xe6f0d8],
+);
+// Eucalipto: tronco alto e claro, copa só no alto, folhas verde-acinzentadas.
+plantForest(
+  [1, 2, 3].map((k) =>
+    variant('Aspen Large', 30 + k, (tree) => {
+      tree.options.bark.tint = 0xd9c8ae;
+      tree.options.leaves.tint = 0xa9b894;
+      tree.options.leaves.start = 0.5;
+      tree.options.branch.children[0] = 7;
+    }),
+  ),
+  160,
+  (x, z) => fbm(x / 240 + 100, z / 240 - 60) > 0.55,
+  [20, 28],
+  [0x7d9a6a, 0x89a374, 0x728f62],
+);
+// Arbustos na beira da estrada.
+plantForest(
+  [variant('Bush 1', 41), variant('Bush 2', 42), variant('Bush 3', 43)],
+  300,
+  (_x, _z, d) => d < 60 || rand() < 0.15,
+  [1.2, 2.6],
+  [0x7da05c, 0x8fae66, 0x6f9450],
 );
 
 // Capim seco: cartões cruzados com textura de folhas finas (o detalhe que mais "vende" a beira da estrada).
@@ -502,7 +665,7 @@ scatter(
   grassCard,
   40_000,
   (x, z, d) => clear(x, z) && (d < 30 || rand() < 0.04),
-  [0xffffff, 0xd8ccb0, 0xbfb490],
+  [0xffffff, 0xc9d6a0, 0x9fc07a, 0x8db56c, 0xd8ccb0],
   [0.7, 1.4],
   TERRAIN * 0.5,
   false,
@@ -682,9 +845,13 @@ composer.addPass(new OutputPass());
 composer.addPass(new ShaderPass(GradeShader));
 composer.addPass(new SMAAPass());
 
+let texturesReady = false;
+THREE.DefaultLoadingManager.onLoad = () => (texturesReady = true);
+setTimeout(() => (texturesReady = true), 15_000);
 function render() {
   composer.render();
-  document.body.dataset.ready = '1';
+  if (texturesReady) document.body.dataset.ready = '1';
+  else requestAnimationFrame(render);
 }
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;

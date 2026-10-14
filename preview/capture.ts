@@ -34,7 +34,7 @@ try {
       if (msg.type() === 'error') errors.push(msg.text());
     });
     await tab.goto(`http://localhost:5199/preview/${page}`);
-    await tab.waitForFunction(() => document.body.dataset.ready === '1', undefined, { timeout: 180_000 });
+    await tab.waitForFunction(() => document.body.dataset.ready === '1', undefined, { timeout: 540_000 });
     await tab.waitForTimeout(500);
     const name = page
       .replace(/[^a-z0-9]+/gi, '-')
