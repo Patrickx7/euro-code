@@ -14,6 +14,9 @@ import { createNewCondition, findCarModel, STARTER_CAR_MODEL_ID, type OwnedCar }
 /** 2: Freela na Estrada (dev freelancer). Saves da versão 1 (caminhoneiro) não são migrados. */
 export const SAVE_VERSION = 2;
 
+/** Qualidade gráfica: `low` para máquinas fracas (sem sombras nem pós-processamento). */
+export type GraphicsQuality = 'low' | 'medium' | 'high';
+
 /** Estatística de repetição espaçada (caixas de Leitner: 0 = errou recentemente, 5 = domina). */
 export interface QuestionStat {
   correct: number;
@@ -48,6 +51,7 @@ export interface SaveData {
   settings: {
     /** Alivia as punições (menos blitz, falhas e sono). */
     instructorMode: boolean;
+    graphics: GraphicsQuality;
   };
 }
 
@@ -79,6 +83,6 @@ export function createNewSave(now: Date = new Date()): SaveData {
       questionStats: {},
       reviewLessonIds: [],
     },
-    settings: { instructorMode: false },
+    settings: { instructorMode: false, graphics: 'high' },
   };
 }

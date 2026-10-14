@@ -1,8 +1,8 @@
 # Freela na Estrada: Plano do Projeto
 
-> **Status:** Fundação (Fase 0) e pivô de conceito (Fase 0b) prontos. Há uma prévia visual no estilo
-> Slow Roads, o carro do estagiário (Quadradinho) modelado no Blender, o personagem (Kenney) com
-> animações e os carros do trânsito. Próximas fases: 1 a 6, que podem rodar em paralelo.
+> **Status:** Fases 0 e 0b prontas, Fase 2 (visual) adiantada e a trilha `core` de conteúdo escrita.
+> O jogo mostra o Quadradinho numa estrada em circuito no estilo Slow Roads, com presets de qualidade.
+> Próximas: 1 (mapa), 3 (carro), 5 (notebook), conteúdo das trilhas front/back/typescript/fullstack.
 
 Jogo de direção no navegador, ambientado em **Osasco e Cotia (SP)**. O protagonista é um **dev
 freelancer**: dirige até os clientes, chega com o notebook e **coda as tasks de verdade**. Começa como
@@ -215,21 +215,21 @@ preview/                                prévias visuais e captura de tela
 Cada fase = uma sessão em claude.ai/code neste repositório, terminando com um PR. Várias rodam em
 paralelo.
 
-| Fase               | Conteúdo                                                                                                                     | Depende de |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| **0 Fundação** ✅  | Vite, TS, Three.js, lint, testes, CI, contratos, runner de exercícios                                                        | —          |
-| **0b Pivô** ✅     | Conceito Freela na Estrada, contratos novos, exercícios web, regras de carreira, carro no protótipo                          | 0          |
-| **1 Mapa**         | Pipeline OSM, estradas, prédios, terreno, chunks, A*, minimapa, crédito OSM, pontos de interesse                             | 0b         |
-| **2 Visual**       | Estilo Slow Roads no jogo (céu, névoa, terreno, árvores EZ-Tree), presets de qualidade, carregamento glTF, tela de créditos  | 0b         |
-| **3 Carro**        | Física Rapier, câmeras (perseguição, cabine), controles, consumo, desgaste, falhas, pisca-alerta                             | 0b         |
-| **4 Personagem**   | Criador do dev (skins Kenney), animações (andar, sentar, digitar), cena de chegada no cliente                                | 2          |
-| **5 Notebook**     | CodeMirror, kanban, chat do cliente, preview web em iframe (mesmo runtime de `src/edu/web/`), terminal Node em Worker, temas | 0b         |
-| **6a–6e Conteúdo** | core (2 sessões), front, back, typescript, fullstack, com jobs                                                               | 0b         |
-| **7 Trânsito**     | IA, semáforos, polícia orientando o trânsito em pane perigosa                                                                | 1, 3       |
-| **8 Gameplay**     | Dia, app de jobs, SLA, pagamento, reputação, promoção e entrevista, posto, pedágio, concessionária, personalização           | 1, 3, 5    |
-| **9 Estrada**      | Blitz, CNH, sono (casa/hotel), pane e oficina                                                                                | 7, 8       |
-| **10 UI e áudio**  | HUD, menus, celular, dia/noite, sons                                                                                         | 8, 9       |
-| **11 Integração**  | Balanceamento, desempenho, e2e do ciclo completo, release                                                                    | todas      |
+| Fase                   | Conteúdo                                                                                                                                                                                                                                                                       | Depende de |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- |
+| **0 Fundação** ✅      | Vite, TS, Three.js, lint, testes, CI, contratos, runner de exercícios                                                                                                                                                                                                          | —          |
+| **0b Pivô** ✅         | Conceito Freela na Estrada, contratos novos, exercícios web, regras de carreira, carro no protótipo                                                                                                                                                                            | 0          |
+| **1 Mapa**             | Pipeline OSM, estradas, prédios, terreno, chunks, A*, minimapa, crédito OSM, pontos de interesse                                                                                                                                                                               | 0b         |
+| **2 Visual** (parcial) | ✅ estilo Slow Roads no jogo (céu, névoa, terreno, árvores EZ-Tree sob demanda, capim), presets de qualidade, carro glTF. Falta: tela de créditos, ciclo dia/noite, aplicar no mapa real                                                                                       | 0b         |
+| **3 Carro**            | Física Rapier, câmeras (perseguição, cabine), controles, consumo, desgaste, falhas, pisca-alerta                                                                                                                                                                               | 0b         |
+| **4 Personagem**       | Criador do dev (skins Kenney), animações (andar, sentar, digitar), cena de chegada no cliente                                                                                                                                                                                  | 2          |
+| **5 Notebook**         | CodeMirror, kanban, chat do cliente, preview web em iframe (mesmo runtime de `src/edu/web/`; o iframe precisa permitir ler e editar `document.styleSheets`, usado pelos testes de media query), terminal Node em Worker, temas, correção de perguntas (`src/edu/questions.ts`) | 0b         |
+| **6a–6e Conteúdo**     | ✅ core (6 módulos, 24 jobs). Faltam: front, back, typescript, fullstack, com jobs                                                                                                                                                                                             | 0b         |
+| **7 Trânsito**         | IA, semáforos, polícia orientando o trânsito em pane perigosa                                                                                                                                                                                                                  | 1, 3       |
+| **8 Gameplay**         | Dia, app de jobs, SLA, pagamento, reputação, promoção e entrevista, posto, pedágio, concessionária, personalização                                                                                                                                                             | 1, 3, 5    |
+| **9 Estrada**          | Blitz, CNH, sono (casa/hotel), pane e oficina                                                                                                                                                                                                                                  | 7, 8       |
+| **10 UI e áudio**      | HUD, menus, celular, dia/noite, sons                                                                                                                                                                                                                                           | 8, 9       |
+| **11 Integração**      | Balanceamento, desempenho, e2e do ciclo completo, release                                                                                                                                                                                                                      | todas      |
 
 ### 6.1 Prompt base para cada sessão
 

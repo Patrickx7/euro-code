@@ -5,12 +5,14 @@ como **estagiário**, com um carro caindo aos pedaços, aceitando jobs ruins ("d
 centralizar uma div por R$ 35"), chega no cliente com o notebook e **coda as tasks de verdade**. Para
 crescer, aprende **HTML, CSS, JavaScript, Node.js e TypeScript**.
 
-> Status: **em desenvolvimento**. A fundação técnica e o pivô para o conceito novo estão prontos: o
-> `npm run dev` mostra o protótipo com o carro do estagiário na estrada, os exercícios web (HTML/CSS)
-> já são corrigidos num navegador de verdade e as regras de SLA e promoção estão implementadas. Há
-> também uma prévia visual do estilo do jogo. O plano detalhado está em [`PLANO.md`](PLANO.md).
+> Status: **em desenvolvimento**. O `npm run dev` já mostra o visual do jogo: o Quadradinho rodando
+> sozinho por uma estrada em circuito no estilo Slow Roads (o mapa real de Osasco e Cotia vem depois).
+> A trilha do estagiário está escrita (HTML, CSS, layout, JavaScript e DOM: 26 lições, 62 exercícios,
+> 328 perguntas e 24 jobs), os exercícios web são corrigidos num navegador de verdade e as regras de
+> SLA e promoção estão prontas. Falta juntar tudo na jogabilidade (notebook, app de jobs, física do
+> carro). O plano detalhado está em [`PLANO.md`](PLANO.md).
 
-![O protótipo: o Quadradinho na estrada](preview/jogo-freela.png)
+![O jogo hoje: o Quadradinho na estrada, qualidade alta](preview/jogo-freela.png)
 
 ## O jogo
 
@@ -110,7 +112,7 @@ tools/blender/build-models.sh   # carro + personagem (baixa o pacote do Kenney)
 
 ```bash
 npm install
-npm run dev               # http://localhost:5173
+npm run dev               # http://localhost:5173  (?qualidade=baixa|media|alta)
 npm run format:check
 npm run lint
 npm run typecheck

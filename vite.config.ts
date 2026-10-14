@@ -6,6 +6,8 @@ export default defineConfig({
   build: {
     target: 'es2022',
     sourcemap: true,
+    // As árvores fotográficas (EZ-Tree) trazem ~4 MB de texturas embutidas num pedaço carregado sob demanda.
+    chunkSizeWarningLimit: 4500,
   },
   test: {
     include: ['src/**/*.test.ts', 'tools/**/*.test.ts'],

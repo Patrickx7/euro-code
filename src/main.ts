@@ -2,7 +2,8 @@ import './style.css';
 import { EventBus } from './core/event-bus';
 import { GameLoop } from './core/game-loop';
 import { SaveManager } from './core/save-manager';
-import { createPlaceholderScene } from './render/placeholder-scene';
+import { createOpenRoadScene } from './render/open-road/open-road-scene';
+import { parseQuality } from './render/open-road/quality';
 import { BALANCE } from './shared/balance';
 import type { GameEvents } from './shared/events';
 import { SENIORITY_LABEL } from './shared/profile';
@@ -43,10 +44,26 @@ function start() {
   const save = new SaveManager().loadOrCreate();
   const activeCar = save.cars[save.activeCarIndex];
 
+  const carModel = findCarModel(activeCar?.modelId ?? '');
+  // `?qualidade=baixa|media|alta` na URL tem prioridade sobre a configuração salva.
+  const quality =
+    parseQuality(new URLSearchParams(location.search).get('qualidade')) ?? save.settings.graphics;
+
+  hud.seniority.textContent = SENIORITY_LABEL[save.career.seniority];
+  hud.car.textContent = carModel?.name ?? '—';
+  hud.money.textContent = money.format(save.money);
+
   let scene;
   try {
-    scene = createPlaceholderScene(canvas, { paint: activeCar?.customization.paint ?? '8fb0c4' });
-  } catch {
+    scene = createOpenRoadScene(canvas, {
+      quality,
+      carModelFile: carModel?.modelFile ?? 'quadradinho.glb',
+      paint: activeCar?.customization.paint ?? '8fb0c4',
+      // Usado pelos testes ponta a ponta.
+      onCarLoaded: () => (document.body.dataset.carLoaded = 'true'),
+    });
+  } catch (err) {
+    console.error(err);
     const fatal = element('fatal');
     fatal.textContent = 'Seu navegador não conseguiu iniciar o WebGL, necessário para o jogo.';
     fatal.hidden = false;
@@ -54,9 +71,6 @@ function start() {
   }
 
   const bus = new EventBus<GameEvents>();
-  hud.seniority.textContent = SENIORITY_LABEL[save.career.seniority];
-  hud.car.textContent = (activeCar && findCarModel(activeCar.modelId)?.name) ?? '—';
-  hud.money.textContent = money.format(save.money);
 
   const resize = () => scene.resize(window.innerWidth, window.innerHeight);
   window.addEventListener('resize', resize);

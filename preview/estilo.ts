@@ -157,7 +157,7 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
 renderer.setPixelRatio(1);
 renderer.setSize(window.innerWidth, window.innerHeight, false);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = MOOD.exposure;
 
@@ -208,7 +208,7 @@ scene.add(new THREE.HemisphereLight(MOOD.hemiSky, MOOD.hemiGround, MOOD.hemiInte
 
 const textureLoader = new THREE.TextureLoader();
 function photo(file: string, color = true): THREE.Texture {
-  const texture = textureLoader.load(new URL(`./assets/${file}`, import.meta.url).href);
+  const texture = textureLoader.load(new URL(`../public/textures/${file}`, import.meta.url).href);
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   texture.anisotropy = 8;
   if (color) texture.colorSpace = THREE.SRGBColorSpace;

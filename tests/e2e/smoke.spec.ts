@@ -1,5 +1,10 @@
 import { expect, test } from '@playwright/test';
 
+// Qualidade baixa: nas máquinas da nuvem e da CI o WebGL roda por software.
+const GAME_URL = '/?qualidade=baixa';
+
+test.describe.configure({ timeout: 120_000 });
+
 test('o jogo carrega, desenha a cena e o relógio do jogo anda', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (err) => errors.push(err.message));
@@ -7,7 +12,7 @@ test('o jogo carrega, desenha a cena e o relógio do jogo anda', async ({ page }
     if (msg.type() === 'error') errors.push(`${msg.text()} (${msg.location().url})`);
   });
 
-  await page.goto('/');
+  await page.goto(GAME_URL);
   await expect(page).toHaveTitle('Freela na Estrada');
   await expect(page.locator('#hud-seniority')).toHaveText('Estagiário');
   await expect(page.locator('#hud-car')).toHaveText('Quadradinho 1.0');
@@ -16,18 +21,18 @@ test('o jogo carrega, desenha a cena e o relógio do jogo anda', async ({ page }
 
   const firstClock = await page.locator('#hud-clock').textContent();
   await expect
-    .poll(async () => page.locator('#hud-clock').textContent(), { timeout: 15_000 })
+    .poll(async () => page.locator('#hud-clock').textContent(), { timeout: 60_000 })
     .not.toBe(firstClock);
 
   // O modelo 3D do carro carregou (sem erro de rede nem de decodificação).
   await expect
-    .poll(async () => page.evaluate(() => document.body.dataset.carLoaded), { timeout: 30_000 })
+    .poll(async () => page.evaluate(() => document.body.dataset.carLoaded), { timeout: 60_000 })
     .toBe('true');
 
   // O loop está desenhando quadros.
   await expect
     .poll(async () => Number(await page.evaluate(() => document.body.dataset.frames ?? '0')), {
-      timeout: 10_000,
+      timeout: 60_000,
     })
     .toBeGreaterThan(0);
 
@@ -37,11 +42,13 @@ test('o jogo carrega, desenha a cena e o relógio do jogo anda', async ({ page }
 });
 
 test('o canvas não está em branco', async ({ page }) => {
-  await page.goto('/');
+  await page.goto(GAME_URL);
   await expect
-    .poll(async () => Number(await page.evaluate(() => document.body.dataset.frames ?? '0')))
+    .poll(async () => Number(await page.evaluate(() => document.body.dataset.frames ?? '0')), {
+      timeout: 60_000,
+    })
     .toBeGreaterThan(0);
   const screenshot = await page.locator('#game').screenshot();
-  // Uma tela de uma cor só comprime para poucos bytes; a cena com estrada, árvores e o carro é bem maior.
+  // Uma tela de uma cor só comprime para poucos bytes; a cena com morros, árvores, estrada e o carro é bem maior.
   expect(screenshot.byteLength).toBeGreaterThan(8_000);
 });

@@ -31,7 +31,8 @@ O Chromium já vem instalado nas sessões na nuvem; não rode `playwright instal
 - `src/edu/web/`: runtime dos exercícios web (HTML/CSS/DOM), injetado na página do exercício; `tools/web-runner.ts` roda no Chromium para o validador e os testes.
 - `src/edu/validation.ts` + `tools/validate-content.ts`: regras de qualidade do conteúdo, dos jobs e das trilhas.
 - `src/gameplay/career.ts`: SLA, estrelas, reputação, chance de promoção e escolha de trilha (funções puras).
-- `src/render/`: cena Three.js. Hoje é um protótipo com o Quadradinho; o mapa real entra na Fase 1, o visual na Fase 2 e a física na Fase 3.
+- `src/render/open-road/`: cena no estilo Slow Roads (relevo, estrada em circuito, vegetação em tiles, céu, névoa, pós-processamento) com presets de qualidade (`?qualidade=baixa|media|alta`). O circuito é provisório: o mapa real entra na Fase 1 e a física na Fase 3. `src/render/car.ts` carrega os carros glTF.
+- `src/edu/questions.ts`: correção das perguntas (normaliza código e saída).
 - `preview/`: prévias visuais (estrada estilo Slow Roads, garagem, provador do personagem, telas) e `capture.ts`.
 - `tools/blender/`: modelos gerados por script no Blender (`bpy`). Otimize glTF com `--palette false --join-named false` para manter os nomes de materiais e rodas.
-- Para ver o jogo rodando: `npm run dev`. Nas sessões na nuvem o WebGL roda por software (FPS baixo é esperado).
+- Para ver o jogo rodando: `npm run dev`. Nas sessões na nuvem o WebGL roda por software (FPS baixo é esperado; use `?qualidade=baixa`, como o e2e).
