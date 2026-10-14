@@ -1,0 +1,1012 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
+    <title>Freela na Estrada · telas</title>
+    <style>
+      :root {
+        --bg: #14161c;
+        --panel: #1d2029;
+        --panel-2: #252935;
+        --line: #343a48;
+        --text: #e9ecf2;
+        --muted: #9aa3b5;
+        --accent: #f5b942;
+        --ok: #5fd08a;
+        --err: #ff6b6b;
+        --blue: #6aa7ff;
+        --pink: #f78fb3;
+        font-family:
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        color: var(--text);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+      }
+      .screen {
+        width: 1600px;
+        height: 900px;
+        display: none;
+        position: relative;
+        overflow: hidden;
+      }
+      .screen.active {
+        display: block;
+      }
+      .mono {
+        font-family: ui-monospace, 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      /* ---------------- notebook no cliente ---------------- */
+      #notebook {
+        background: radial-gradient(circle at 50% 120%, #3a2c22, #120f0d 70%);
+        padding: 34px 60px 0;
+      }
+      .laptop {
+        width: 1480px;
+        height: 810px;
+        margin: 0 auto;
+        background: #0d0e12;
+        border: 14px solid #2b2d33;
+        border-bottom-width: 22px;
+        border-radius: 22px 22px 6px 6px;
+        box-shadow: 0 40px 80px rgb(0 0 0 / 0.6);
+        display: grid;
+        grid-template-rows: 44px 1fr 30px;
+        overflow: hidden;
+      }
+      .topbar {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 0 16px;
+        background: #171920;
+        border-bottom: 1px solid var(--line);
+        font-size: 14px;
+      }
+      .topbar .dots span {
+        display: inline-block;
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        margin-right: 6px;
+      }
+      .topbar strong {
+        color: var(--accent);
+      }
+      .topbar .spacer {
+        flex: 1;
+      }
+      .workspace {
+        display: grid;
+        grid-template-columns: 270px 1fr 470px;
+        min-height: 0;
+      }
+      .kanban {
+        background: var(--panel);
+        border-right: 1px solid var(--line);
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        font-size: 13px;
+      }
+      .kanban h4 {
+        margin: 4px 0;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .card {
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 12px;
+        line-height: 1.35;
+      }
+      .card.doing {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px var(--accent) inset;
+      }
+      .card.done {
+        opacity: 0.55;
+        text-decoration: line-through;
+      }
+      .card small {
+        display: block;
+        color: var(--muted);
+        margin-top: 4px;
+        text-decoration: none;
+      }
+      .editor {
+        display: grid;
+        grid-template-rows: 36px 1fr 200px;
+        min-width: 0;
+        background: #111318;
+      }
+      .tabs {
+        display: flex;
+        background: #171920;
+        border-bottom: 1px solid var(--line);
+        font-size: 13px;
+      }
+      .tabs span {
+        padding: 9px 18px;
+        color: var(--muted);
+        border-right: 1px solid var(--line);
+      }
+      .tabs span.on {
+        color: var(--text);
+        background: #111318;
+        border-top: 2px solid var(--accent);
+      }
+      pre.code {
+        margin: 0;
+        padding: 14px 0;
+        font-size: 15px;
+        line-height: 1.6;
+        overflow: hidden;
+        counter-reset: line;
+      }
+      pre.code div {
+        padding-left: 64px;
+        position: relative;
+        white-space: pre;
+      }
+      pre.code div::before {
+        counter-increment: line;
+        content: counter(line);
+        position: absolute;
+        left: 0;
+        width: 44px;
+        text-align: right;
+        color: #4b5263;
+      }
+      pre.code div.cur {
+        background: rgb(245 185 66 / 0.08);
+      }
+      .k {
+        color: #c792ea;
+      }
+      .p {
+        color: #82aaff;
+      }
+      .v {
+        color: #f78c6c;
+      }
+      .s {
+        color: #c3e88d;
+      }
+      .c {
+        color: #5c6577;
+        font-style: italic;
+      }
+      .cursor {
+        display: inline-block;
+        width: 2px;
+        height: 18px;
+        background: var(--accent);
+        vertical-align: -3px;
+      }
+      .tests {
+        border-top: 1px solid var(--line);
+        background: #0f1115;
+        padding: 12px 16px;
+        font-size: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .tests .head {
+        display: flex;
+        justify-content: space-between;
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .run {
+        background: var(--accent);
+        color: #1b1405;
+        border-radius: 8px;
+        padding: 4px 12px;
+        font-weight: 700;
+        text-transform: none;
+        letter-spacing: 0;
+      }
+      .ok {
+        color: var(--ok);
+      }
+      .err {
+        color: var(--err);
+      }
+      .side {
+        display: grid;
+        grid-template-rows: 1fr 300px;
+        border-left: 1px solid var(--line);
+        min-height: 0;
+      }
+      .browser {
+        background: #e9e4da;
+        position: relative;
+        color: #2a2016;
+      }
+      .browser .bar {
+        height: 32px;
+        background: #d6d0c4;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        font-size: 12px;
+        color: #5a5246;
+      }
+      .browser .site {
+        position: absolute;
+        inset: 32px 0 0 0;
+        background: repeating-linear-gradient(45deg, #f4ede1 0 14px, #efe6d6 14px 28px);
+      }
+      .browser .site h5 {
+        margin: 0;
+        padding: 14px 18px;
+        background: #7a3e1d;
+        color: #ffe9c9;
+        font-size: 16px;
+      }
+      .menu-card {
+        position: absolute;
+        left: 18px;
+        top: 70px;
+        width: 210px;
+        padding: 16px;
+        background: #fffaf2;
+        border: 3px dashed var(--err);
+        border-radius: 10px;
+        font-size: 13px;
+        box-shadow: 0 6px 18px rgb(0 0 0 / 0.15);
+      }
+      .menu-card b {
+        display: block;
+        font-size: 16px;
+        margin-bottom: 6px;
+      }
+      .target {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 210px;
+        height: 130px;
+        transform: translate(-50%, -30%);
+        border: 2px dashed rgb(95 208 138 / 0.9);
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        color: #2f7a4e;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .chat {
+        background: var(--panel);
+        border-top: 1px solid var(--line);
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        font-size: 14px;
+      }
+      .chat h4 {
+        margin: 0;
+        font-size: 12px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .bubble {
+        max-width: 85%;
+        padding: 9px 12px;
+        border-radius: 12px;
+        line-height: 1.35;
+      }
+      .bubble.client {
+        background: var(--panel-2);
+        border-bottom-left-radius: 2px;
+      }
+      .bubble.me {
+        align-self: flex-end;
+        background: #2f4a7a;
+        border-bottom-right-radius: 2px;
+      }
+      .status {
+        display: flex;
+        gap: 22px;
+        align-items: center;
+        padding: 0 16px;
+        background: #171920;
+        border-top: 1px solid var(--line);
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .status b {
+        color: var(--text);
+      }
+
+      /* ---------------- criador ---------------- */
+      #criador {
+        background: linear-gradient(160deg, #2a2133, #15171d 60%);
+        display: none;
+        grid-template-columns: 520px 1fr 470px;
+        gap: 28px;
+        padding: 40px;
+      }
+      #criador.active {
+        display: grid;
+      }
+      .title {
+        position: absolute;
+        top: 22px;
+        left: 40px;
+        font-size: 13px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .stage {
+        margin-top: 24px;
+        border-radius: 22px;
+        background: radial-gradient(circle at 50% 35%, #4b3b5c, #1b1b24 70%);
+        display: grid;
+        place-items: center;
+        position: relative;
+      }
+      .stage .floor {
+        position: absolute;
+        bottom: 70px;
+        width: 300px;
+        height: 40px;
+        border-radius: 50%;
+        background: radial-gradient(rgb(0 0 0 / 0.5), transparent 70%);
+      }
+      .stage .name {
+        position: absolute;
+        bottom: 22px;
+        text-align: center;
+        font-size: 22px;
+        font-weight: 800;
+      }
+      .stage .name small {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--accent);
+      }
+      .options {
+        margin-top: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+      .group h3 {
+        margin: 0 0 10px;
+        font-size: 13px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .swatches {
+        display: flex;
+        gap: 10px;
+      }
+      .swatches i {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: 3px solid transparent;
+      }
+      .swatches i.sel {
+        border-color: var(--accent);
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .chips span {
+        padding: 8px 14px;
+        border-radius: 10px;
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        font-size: 14px;
+      }
+      .chips span.sel {
+        border-color: var(--accent);
+        background: rgb(245 185 66 / 0.12);
+        color: var(--accent);
+      }
+      .chips span.lock {
+        opacity: 0.45;
+      }
+      .field {
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 15px;
+      }
+      .field small {
+        display: block;
+        font-size: 11px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 3px;
+      }
+      .twocol {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .carpanel {
+        margin-top: 24px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        padding: 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+      .carpanel .shot {
+        height: 210px;
+        border-radius: 14px;
+        background:
+          linear-gradient(to bottom, transparent 55%, rgb(0 0 0 / 0.35)),
+          url('assets/carro.jpg') center / cover,
+          linear-gradient(#d9ad90, #9e6b4f);
+        display: grid;
+        place-items: center;
+      }
+      .note {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      /* ---------------- app de freelas ---------------- */
+      #app {
+        background:
+          radial-gradient(circle at 75% 20%, rgb(247 143 179 / 0.25), transparent 40%),
+          linear-gradient(160deg, #2b2234, #12141a 70%);
+        display: none;
+        grid-template-columns: 1fr 440px 1fr;
+        align-items: center;
+        gap: 40px;
+        padding: 0 60px;
+      }
+      #app.active {
+        display: grid;
+      }
+      .phone {
+        width: 420px;
+        height: 840px;
+        border-radius: 52px;
+        background: #0b0c10;
+        border: 12px solid #24262d;
+        box-shadow: 0 30px 70px rgb(0 0 0 / 0.6);
+        overflow: hidden;
+        display: grid;
+        grid-template-rows: 46px auto 1fr 74px;
+      }
+      .phone .notch {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 26px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .apphead {
+        padding: 6px 20px 14px;
+      }
+      .apphead .brand {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--accent);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .apphead h2 {
+        margin: 6px 0 8px;
+        font-size: 24px;
+      }
+      .apphead .meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .jobs {
+        padding: 0 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        overflow: hidden;
+      }
+      .job {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 14px 16px;
+        display: grid;
+        gap: 6px;
+      }
+      .job.hot {
+        border-color: var(--accent);
+      }
+      .job.locked {
+        opacity: 0.5;
+      }
+      .job .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 10px;
+      }
+      .job b {
+        font-size: 16px;
+      }
+      .job .price {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--ok);
+      }
+      .job .who {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .job .tags {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        font-size: 12px;
+      }
+      .job .tags span {
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: var(--panel-2);
+        color: var(--muted);
+      }
+      .job .tags .warn {
+        color: var(--accent);
+      }
+      .nav {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        border-top: 1px solid var(--line);
+        background: #101217;
+        font-size: 12px;
+        color: var(--muted);
+        text-align: center;
+        align-items: center;
+      }
+      .nav .on {
+        color: var(--accent);
+        font-weight: 700;
+      }
+      .aside h1 {
+        font-size: 44px;
+        margin: 0 0 14px;
+        line-height: 1.05;
+      }
+      .aside h1 span {
+        color: var(--accent);
+      }
+      .aside p {
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.55;
+        margin: 0 0 12px;
+      }
+      .hudcard {
+        background: rgb(0 0 0 / 0.35);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 18px 20px;
+        display: grid;
+        gap: 12px;
+      }
+      .meter {
+        display: grid;
+        grid-template-columns: 110px 1fr 54px;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+      }
+      .meter .track {
+        height: 9px;
+        border-radius: 99px;
+        background: #2b2f3a;
+        overflow: hidden;
+      }
+      .meter .fill {
+        height: 100%;
+        border-radius: 99px;
+      }
+      .ladder {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-size: 15px;
+      }
+      .ladder div {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 10px 14px;
+        border-radius: 12px;
+        background: rgb(255 255 255 / 0.04);
+        border: 1px solid var(--line);
+      }
+      .ladder div.now {
+        border-color: var(--accent);
+        background: rgb(245 185 66 / 0.1);
+      }
+      .ladder small {
+        color: var(--muted);
+        margin-left: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ======================= 1. NOTEBOOK NO CLIENTE ======================= -->
+    <section class="screen" id="notebook">
+      <div class="laptop">
+        <div class="topbar">
+          <span class="dots"
+            ><span style="background: #ff5f57"></span><span style="background: #febc2e"></span
+            ><span style="background: #28c840"></span
+          ></span>
+          <strong>Padaria Pão Quente</strong>
+          <span>Jd. Piratininga, Osasco · job de estagiário</span>
+          <span class="spacer"></span>
+          <span class="chip">⏱ prazo 12:00</span>
+          <span class="chip">💰 R$ 35</span>
+          <span class="chip">🚗 vim de 38 km</span>
+        </div>
+        <div class="workspace">
+          <aside class="kanban">
+            <div>
+              <h4>A fazer</h4>
+              <div class="card">Trocar a cor do botão "Encomendar"<small>CSS · fácil</small></div>
+            </div>
+            <div>
+              <h4>Fazendo</h4>
+              <div class="card doing">
+                Centralizar a div do cardápio
+                <small>CSS · "é rapidinho, né?" — Seu Zé</small>
+              </div>
+            </div>
+            <div>
+              <h4>Feito</h4>
+              <div class="card done">Corrigir o telefone no rodapé<small>HTML</small></div>
+            </div>
+            <div class="card" style="border-style: dashed; color: var(--muted)">
+              📘 Aula: Flexbox e alinhamento<small>revisar antes de entregar</small>
+            </div>
+          </aside>
+          <main class="editor">
+            <div class="tabs mono">
+              <span>index.html</span><span class="on">estilo.css</span><span>script.js</span>
+            </div>
+            <pre
+              class="code mono"
+            ><div><span class="c">/* Seu Zé: "o quadrado do cardápio tá torto" */</span></div><div><span class="p">.pagina</span> {</div><div>  <span class="k">min-height</span>: <span class="v">100vh</span>;</div><div>  <span class="k">display</span>: <span class="v">flex</span>;</div><div>  <span class="k">justify-content</span>: <span class="v">center</span>;</div><div class="cur">  <span class="k">align-items</span>: <span class="cursor"></span></div><div>}</div><div> </div><div><span class="p">.cardapio</span> {</div><div>  <span class="k">width</span>: <span class="v">320px</span>;</div><div>  <span class="k">padding</span>: <span class="v">24px</span>;</div><div>  <span class="k">background</span>: <span class="s">#fffaf2</span>;</div><div>  <span class="k">border-radius</span>: <span class="v">12px</span>;</div><div>}</div></pre>
+            <div class="tests mono">
+              <div class="head">
+                <span>Testes do cliente · 1 de 2 passando</span><span class="run">▶ Rodar (Ctrl+Enter)</span>
+              </div>
+              <div class="ok">✔ A div do cardápio está centralizada na horizontal</div>
+              <div class="err">
+                ✖ A div do cardápio está centralizada na vertical — esperava o centro em 450px, está em 132px
+              </div>
+              <div style="color: var(--muted)">
+                💡 Dica (R$ 5): qual propriedade alinha no eixo cruzado do flex?
+              </div>
+            </div>
+          </main>
+          <aside class="side">
+            <div class="browser">
+              <div class="bar">🔒 paoquente.com.br/cardapio</div>
+              <div class="site">
+                <h5>🥖 Padaria Pão Quente</h5>
+                <div class="target">aqui é o centro</div>
+                <div class="menu-card">
+                  <b>Cardápio do dia</b>Pão na chapa · R$ 6<br />Pingado · R$ 5<br />Coxinha · R$ 8
+                </div>
+              </div>
+            </div>
+            <div class="chat">
+              <h4>Chat com o cliente</h4>
+              <div class="bubble client">Oi! Só centraliza aquele quadrado lá, coisa rápida né? 😅</div>
+              <div class="bubble me">Já estou nisso, Seu Zé! Falta só o vertical.</div>
+              <div class="bubble client">Ah, e aproveita e muda a cor do botão pra vermelho 🙏</div>
+              <span class="chip" style="align-self: flex-start; color: var(--accent)"
+                >⚠ Escopo aumentou: +1 task</span
+              >
+            </div>
+          </aside>
+        </div>
+        <div class="status mono">
+          <span>🔋 Notebook <b>34%</b></span>
+          <span>🕙 <b>10:42</b></span>
+          <span>📶 Wi-Fi da padaria <b>fraco</b></span>
+          <span style="margin-left: auto">Estagiário · ★ 4,2 · Trilha: núcleo (HTML → CSS → JS)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= 2. CRIADOR DE PERSONAGEM E CARRO ======================= -->
+    <section class="screen" id="criador">
+      <div class="title">Freela na Estrada · seu dev e seu carro</div>
+      <div class="stage">
+        <svg width="320" height="560" viewBox="0 0 320 560" aria-label="Personagem dev">
+          <!-- mochila -->
+          <rect x="78" y="190" width="164" height="190" rx="40" fill="#2f4a3a" />
+          <!-- pernas -->
+          <rect x="112" y="380" width="42" height="140" rx="16" fill="#2b3550" />
+          <rect x="166" y="380" width="42" height="140" rx="16" fill="#2b3550" />
+          <rect x="104" y="505" width="58" height="26" rx="12" fill="#f2f2f2" />
+          <rect x="160" y="505" width="58" height="26" rx="12" fill="#f2f2f2" />
+          <!-- moletom -->
+          <path d="M92 210 Q160 170 228 210 L238 392 Q160 410 82 392 Z" fill="#5a3f8c" />
+          <path d="M92 214 L62 340 Q60 360 78 362 L96 300 Z" fill="#5a3f8c" />
+          <path d="M228 214 L258 340 Q260 360 242 362 L224 300 Z" fill="#5a3f8c" />
+          <circle cx="76" cy="368" r="14" fill="#c98b62" />
+          <circle cx="244" cy="368" r="14" fill="#c98b62" />
+          <text
+            x="160"
+            y="300"
+            text-anchor="middle"
+            font-family="monospace"
+            font-size="30"
+            font-weight="700"
+            fill="#f5b942"
+          >
+            &lt;/&gt;
+          </text>
+          <path d="M138 210 L160 250 L182 210" fill="none" stroke="#3e2a63" stroke-width="6" />
+          <!-- pescoço e cabeça -->
+          <rect x="146" y="168" width="28" height="34" rx="10" fill="#b97b54" />
+          <ellipse cx="160" cy="118" rx="58" ry="66" fill="#c98b62" />
+          <!-- cabelo -->
+          <path
+            d="M100 112 Q100 48 160 46 Q222 46 222 106 Q206 84 176 80 Q150 92 118 86 Q104 96 100 112 Z"
+            fill="#2a1d16"
+          />
+          <!-- barba -->
+          <path
+            d="M108 128 Q112 182 160 186 Q208 182 212 128 Q200 160 160 162 Q120 160 108 128 Z"
+            fill="#2a1d16"
+            opacity="0.9"
+          />
+          <!-- óculos -->
+          <rect x="114" y="104" width="40" height="30" rx="9" fill="none" stroke="#111" stroke-width="5" />
+          <rect x="166" y="104" width="40" height="30" rx="9" fill="none" stroke="#111" stroke-width="5" />
+          <line x1="154" y1="116" x2="166" y2="116" stroke="#111" stroke-width="5" />
+          <circle cx="134" cy="120" r="5" fill="#111" />
+          <circle cx="186" cy="120" r="5" fill="#111" />
+          <path
+            d="M146 152 Q160 160 174 152"
+            fill="none"
+            stroke="#6d3b2a"
+            stroke-width="4"
+            stroke-linecap="round"
+          />
+          <!-- crachá -->
+          <rect x="186" y="236" width="28" height="36" rx="4" fill="#fff" />
+          <rect x="190" y="242" width="20" height="6" fill="#f5b942" />
+        </svg>
+        <div class="floor"></div>
+        <div class="name">Dev Novato<small>Estagiário · "commita na sexta"</small></div>
+      </div>
+
+      <div class="options">
+        <div class="twocol">
+          <div class="field"><small>Nome</small>Dev Novato</div>
+          <div class="field"><small>Apelido</small>"commita na sexta"</div>
+        </div>
+        <div class="field">
+          <small>Bio para os clientes</small>Faço sites, centralizo divs e não cobro deslocamento (ainda).
+        </div>
+        <div class="group">
+          <h3>Tom de pele</h3>
+          <div class="swatches">
+            <i style="background: #f3d3b8"></i><i style="background: #e2b48c"></i
+            ><i class="sel" style="background: #c98b62"></i><i style="background: #9c6644"></i
+            ><i style="background: #6f4430"></i><i style="background: #452b1f"></i>
+          </div>
+        </div>
+        <div class="group">
+          <h3>Cabelo</h3>
+          <div class="chips">
+            <span class="sel">Curto bagunçado</span><span>Cacheado</span><span>Black power</span
+            ><span>Coque</span><span>Longo</span><span>Careca</span><span>Moicano</span>
+          </div>
+        </div>
+        <div class="group">
+          <h3>Rosto</h3>
+          <div class="chips">
+            <span class="sel">Barba cheia</span><span>Bigode</span><span>Sem barba</span
+            ><span class="sel">Óculos redondos</span><span>Sem óculos</span><span>Piercing</span>
+          </div>
+        </div>
+        <div class="group">
+          <h3>Roupa</h3>
+          <div class="chips">
+            <span class="sel">Moletom &lt;/&gt;</span><span>Camiseta de evento tech</span
+            ><span>Camisa xadrez</span><span class="lock">🔒 Blazer de tech lead</span>
+          </div>
+        </div>
+        <div class="group">
+          <h3>Mochila</h3>
+          <div class="chips">
+            <span class="sel">Verde com adesivos</span><span>Preta executiva</span
+            ><span class="lock">🔒 De couro (Sênior)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="carpanel">
+        <h3 style="margin: 0">Seu carro</h3>
+        <div class="shot"></div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline">
+          <b style="font-size: 20px">Popular 90 · 1.0</b><span class="chip">sem ar · porta de outra cor</span>
+        </div>
+        <div class="group">
+          <h3>Cor</h3>
+          <div class="swatches">
+            <i class="sel" style="background: #24527d"></i><i style="background: #b8322f"></i
+            ><i style="background: #e8e4da"></i><i style="background: #2f6b3c"></i
+            ><i style="background: #f0c419"></i><i style="background: #222"></i>
+          </div>
+        </div>
+        <div class="group">
+          <h3>Rodas · Adesivos · Buzina</h3>
+          <div class="chips">
+            <span class="sel">Aço com calota</span><span class="lock">🔒 Liga leve</span
+            ><span class="sel">&lt;/&gt; Dev em formação</span><span>"Funciona na minha máquina"</span
+            ><span class="sel">Fon-fon</span><span>La Cucaracha</span>
+          </div>
+        </div>
+        <div class="group">
+          <h3>Notebook</h3>
+          <div class="chips">
+            <span class="sel">Tema escuro</span><span>Tema claro (corajoso)</span
+            ><span class="sel">Fonte mono</span><span>Adesivo de café</span>
+          </div>
+        </div>
+        <p class="note">
+          Mais carros, roupas e itens liberam conforme a senioridade: Júnior → Pleno → Sênior → Full Stack.
+        </p>
+      </div>
+    </section>
+
+    <!-- ======================= 3. APP DE FREELAS ======================= -->
+    <section class="screen" id="app">
+      <div class="aside">
+        <h1>Seu dia começa<br />no <span>app de freelas</span></h1>
+        <p>
+          Escolha os jobs, monte a rota por Osasco e Cotia e chegue antes do prazo. Job longe paga pouco
+          quando você é estagiário. É assim que começa.
+        </p>
+        <div class="hudcard">
+          <div class="meter">
+            <span>⛽ Gasolina</span>
+            <div class="track"><div class="fill" style="width: 22%; background: var(--err)"></div></div>
+            <span>22%</span>
+          </div>
+          <div class="meter">
+            <span>😴 Cansaço</span>
+            <div class="track"><div class="fill" style="width: 35%; background: var(--blue)"></div></div>
+            <span>35%</span>
+          </div>
+          <div class="meter">
+            <span>🛞 Pneus</span>
+            <div class="track"><div class="fill" style="width: 58%; background: var(--accent)"></div></div>
+            <span>58%</span>
+          </div>
+          <div class="meter">
+            <span>🪪 CNH</span>
+            <div class="track"><div class="fill" style="width: 20%; background: var(--pink)"></div></div>
+            <span>4 pts</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone">
+        <div class="notch"><span>07:12</span><span>📶 🔋 61%</span></div>
+        <div class="apphead">
+          <div class="brand">Freela na Estrada</div>
+          <h2>Bom dia, dev! ☕</h2>
+          <div class="meta">
+            <span class="chip">Estagiário</span><span class="chip">★ 4,2</span
+            ><span class="chip">R$ 212</span>
+          </div>
+        </div>
+        <div class="jobs">
+          <div class="job hot">
+            <div class="row"><b>Centralizar a div do cardápio</b><span class="price">R$ 35</span></div>
+            <div class="who">Padaria Pão Quente · Jd. Piratininga, Osasco</div>
+            <div class="tags">
+              <span>CSS</span><span>🚗 38 km</span><span class="warn">⏱ até 12:00</span
+              ><span>pedágio no caminho</span>
+            </div>
+          </div>
+          <div class="job">
+            <div class="row"><b>Trocar a cor de um botão</b><span class="price">R$ 25</span></div>
+            <div class="who">Mercadinho Bom Preço · Caucaia do Alto, Cotia</div>
+            <div class="tags"><span>CSS</span><span>🚗 52 km</span><span>⏱ até 17:00</span></div>
+          </div>
+          <div class="job">
+            <div class="row"><b>Arrumar o link quebrado</b><span class="price">R$ 20</span></div>
+            <div class="who">Oficina do Tonhão · Km 18, Osasco</div>
+            <div class="tags"><span>HTML</span><span>🚗 12 km</span><span>⏱ hoje</span></div>
+          </div>
+          <div class="job locked">
+            <div class="row"><b>Landing page da clínica</b><span class="price">R$ 450</span></div>
+            <div class="who">Clínica Sorriso · Granja Viana, Cotia</div>
+            <div class="tags"><span>🔒 Júnior (Front)</span><span>HTML · CSS · JS</span></div>
+          </div>
+          <div class="job locked">
+            <div class="row"><b>API de pedidos da pizzaria</b><span class="price">R$ 600</span></div>
+            <div class="who">Pizzaria Forno a Lenha · Vila Yara, Osasco</div>
+            <div class="tags"><span>🔒 Júnior (Back)</span><span>Node.js</span></div>
+          </div>
+        </div>
+        <div class="nav">
+          <span class="on">💼<br />Jobs</span><span>🗺️<br />Mapa</span><span>💰<br />Carteira</span
+          ><span>👤<br />Perfil</span>
+        </div>
+      </div>
+
+      <div class="aside">
+        <h1>Suba de <span>senioridade</span></h1>
+        <div class="ladder">
+          <div class="now">🎒 Estagiário <small>HTML · CSS · JS</small></div>
+          <div>🧑‍💻 Júnior <small>escolhe Front ou Back</small></div>
+          <div>🛠️ Pleno <small>TypeScript</small></div>
+          <div>🧠 Sênior <small>libera a outra trilha</small></div>
+          <div>🚀 Full Stack <small>os jobs grandes</small></div>
+        </div>
+        <p style="margin-top: 14px">
+          Cada promoção exige uma entrevista técnica. Carro novo exige dinheiro e um desafio de código.
+        </p>
+      </div>
+    </section>
+
+    <script>
+      const tela = new URLSearchParams(location.search).get('tela') ?? 'notebook';
+      document.getElementById(tela)?.classList.add('active');
+      document.fonts.ready.then(() => (document.body.dataset.ready = '1'));
+    </script>
+  </body>
+</html>
