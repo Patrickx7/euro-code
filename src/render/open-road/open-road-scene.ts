@@ -1,7 +1,8 @@
 /**
  * Cena do protótipo no estilo "estrada aberta" (referência: Slow Roads): relevo com morros em camadas,
  * estrada em circuito acompanhando o terreno, mata, talhões de pinus e eucalipto, capim seco, névoa
- * colorida e gradação de cor. O carro anda sozinho pela faixa da direita com a câmera atrás.
+ * colorida e gradação de cor. A física do carro fica fora (`src/gameplay/driving.ts`); aqui ele só é
+ * apoiado no chão, com a câmera atrás.
  * O mapa real de Osasco e Cotia substitui o circuito na Fase 1.
  */
 import * as THREE from 'three';
@@ -10,7 +11,7 @@ import type { GraphicsQuality } from '../../shared/save';
 import { loadCar } from '../car';
 import { createAtmosphere, GOLDEN_HOUR } from './atmosphere';
 import { asphaltTexture } from './canvas-textures';
-import { baseHeight, ridgeHeight, terrainHeight } from './landscape';
+import { baseHeight, ridgeHeight, surfaceAt, terrainHeight } from './landscape';
 import { mulberry32 } from './noise';
 import { createComposer } from './post';
 import { QUALITY_PRESETS } from './quality';
@@ -21,9 +22,30 @@ import { buildTerrain, createTerrainMaterial } from './terrain';
 import { DistanceCuller } from './tiles';
 import { plantGrass, plantPhotoTrees, plantSimpleTrees } from './vegetation';
 
+/** O que a física do carro precisa saber do mundo. */
+export interface DrivingWorld {
+  /** Onde o carro começa: na faixa da direita, apontando no sentido da pista. */
+  startPose(): { x: number; z: number; heading: number };
+  surfaceAt(x: number, z: number): { y: number; offRoad: boolean };
+  /** Ponto na faixa da direita, `ahead` metros à frente do trecho mais próximo de (x, z). */
+  laneTarget(x: number, z: number, ahead: number): { x: number; z: number };
+  /** Metade do lado do terreno: o carro não sai daí. */
+  halfSize: number;
+}
+
+export interface CarPose {
+  x: number;
+  z: number;
+  /** Frente em (cos, sen) no plano XZ. */
+  heading: number;
+  /** Quanto o carro andou neste passo (gira as rodas). */
+  moved: number;
+}
+
 export interface GameScene {
-  /** Avança a simulação. `speed` em m/s. */
-  update(dtSeconds: number, speed: number): void;
+  world: DrivingWorld;
+  /** Posiciona o carro e a câmera. */
+  update(dtSeconds: number, pose: CarPose): void;
   render(): void;
   resize(width: number, height: number): void;
   dispose(): void;
@@ -92,26 +114,62 @@ export function createOpenRoadScene(canvas: HTMLCanvasElement, options: OpenRoad
     ? createComposer(renderer, scene, camera, { bloom: preset.bloom, tint: GOLDEN_HOUR.tint })
     : null;
 
-  const frame: RoadFrame = road.frameAt(0);
+  const world: DrivingWorld = {
+    startPose() {
+      const frame = road.frameAt(0);
+      const p = frame.position.clone().addScaledVector(frame.right, LANE_OFFSET);
+      return { x: p.x, z: p.z, heading: Math.atan2(frame.forward.z, frame.forward.x) };
+    },
+    surfaceAt: (x, z) => surfaceAt(road, x, z),
+    laneTarget(x, z, ahead) {
+      const { index } = road.nearest(x, z);
+      const spacing = road.length / road.points.length;
+      const frame = road.frameAt((index + ahead / spacing) * spacing, laneFrame);
+      const p = frame.position.addScaledVector(frame.right, LANE_OFFSET);
+      return { x: p.x, z: p.z };
+    },
+    halfSize: TERRAIN_SIZE / 2 - 60,
+  };
+  const laneFrame: RoadFrame = road.frameAt(0);
+
+  const forward = new THREE.Vector3();
+  const right = new THREE.Vector3();
+  const up = new THREE.Vector3();
   const basis = new THREE.Matrix4();
   const desiredEye = new THREE.Vector3();
   const lookTarget = new THREE.Vector3();
   const smoothedLook = new THREE.Vector3();
-  let travelled = 0;
   let firstFrame = true;
 
-  function placeCar(): void {
-    road.frameAt(travelled, frame);
-    // Frente do carro (+X do modelo) na direção da pista; +Z do modelo é o lado direito.
-    basis.makeBasis(frame.forward, frame.up, frame.right);
+  /** Apoia o carro no chão: altura e inclinação vêm de quatro pontos (frente, trás, lados). */
+  function placeCar(pose: CarPose): void {
+    const fx = Math.cos(pose.heading);
+    const fz = Math.sin(pose.heading);
+    const h = (dx: number, dz: number) => surfaceAt(road, pose.x + dx, pose.z + dz).y;
+    const front = h(fx * 1.2, fz * 1.2);
+    const back = h(-fx * 1.2, -fz * 1.2);
+    const rightSide = h(-fz * 0.7, fx * 0.7);
+    const leftSide = h(fz * 0.7, -fx * 0.7);
+    forward.set(fx * 2.4, front - back, fz * 2.4).normalize();
+    right.set(-fz * 1.4, rightSide - leftSide, fx * 1.4).normalize();
+    up.crossVectors(right, forward).normalize();
+    right.crossVectors(forward, up).normalize();
+    // Frente do carro (+X do modelo) para `forward`; +Z do modelo é o lado direito.
+    basis.makeBasis(forward, up, right);
     car.group.quaternion.setFromRotationMatrix(basis);
-    car.group.position.copy(frame.position).addScaledVector(frame.right, LANE_OFFSET);
-    car.group.position.y += 0.06;
+    car.group.position.set(pose.x, (front + back + rightSide + leftSide) / 4, pose.z);
   }
 
   function placeCamera(dt: number): void {
-    desiredEye.copy(car.group.position).addScaledVector(frame.forward, -9).addScaledVector(frame.up, 2.6);
-    lookTarget.copy(car.group.position).addScaledVector(frame.forward, 24).addScaledVector(frame.up, 1.1);
+    const flat = new THREE.Vector3(forward.x, 0, forward.z).normalize();
+    desiredEye
+      .copy(car.group.position)
+      .addScaledVector(flat, -9)
+      .add(new THREE.Vector3(0, 2.6, 0));
+    lookTarget
+      .copy(car.group.position)
+      .addScaledVector(forward, 24)
+      .add(new THREE.Vector3(0, 1.1, 0));
     // A câmera não pode entrar no morro.
     desiredEye.y = Math.max(desiredEye.y, terrainHeight(road, desiredEye.x, desiredEye.z) + 1.2);
     if (firstFrame) {
@@ -125,19 +183,19 @@ export function createOpenRoadScene(canvas: HTMLCanvasElement, options: OpenRoad
       smoothedLook.lerp(lookTarget, k);
     }
     camera.lookAt(smoothedLook);
-    atmosphere.follow(car.group.position, frame.forward);
+    atmosphere.follow(car.group.position, flat);
     culler.update(camera.position);
   }
 
-  placeCar();
+  const start = world.startPose();
+  placeCar({ ...start, moved: 0 });
   placeCamera(0);
 
   return {
-    update(dt, speed) {
-      const distance = speed * dt;
-      travelled = (travelled + distance) % road.length;
-      car.roll(distance);
-      placeCar();
+    world,
+    update(dt, pose) {
+      car.roll(pose.moved);
+      placeCar(pose);
       placeCamera(dt);
     },
     render() {

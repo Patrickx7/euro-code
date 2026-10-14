@@ -32,6 +32,10 @@ export interface CarModel {
   /** Senioridade mínima para comprar. */
   requiredSeniority: Seniority;
   powerHp: number;
+  massKg: number;
+  /** Distância entre os eixos (define o raio das curvas). */
+  wheelbaseM: number;
+  /** 0 = elétrico (não abastece no posto). */
   tankLiters: number;
   kmPerLiter: number;
   /** Conservação inicial (0 a 1): o carro do estagiário já vem cansado. */
@@ -47,6 +51,8 @@ export const CAR_MODELS: readonly CarModel[] = [
     price: 0,
     requiredSeniority: 'estagiario',
     powerHp: 58,
+    massKg: 870,
+    wheelbaseM: 2.36,
     tankLiters: 42,
     kmPerLiter: 11,
     initialCondition: 0.55,
@@ -59,6 +65,8 @@ export const CAR_MODELS: readonly CarModel[] = [
     price: 9_000,
     requiredSeniority: 'junior',
     powerHp: 82,
+    massKg: 950,
+    wheelbaseM: 2.36,
     tankLiters: 47,
     kmPerLiter: 10,
     initialCondition: 0.7,
@@ -71,6 +79,8 @@ export const CAR_MODELS: readonly CarModel[] = [
     price: 28_000,
     requiredSeniority: 'pleno',
     powerHp: 140,
+    massKg: 1200,
+    wheelbaseM: 2.67,
     tankLiters: 84,
     kmPerLiter: 6,
     initialCondition: 0.8,
@@ -83,6 +93,8 @@ export const CAR_MODELS: readonly CarModel[] = [
     price: 35_000,
     requiredSeniority: 'pleno',
     powerHp: 120,
+    massKg: 1300,
+    wheelbaseM: 2.64,
     tankLiters: 60,
     kmPerLiter: 10,
     initialCondition: 0.85,
@@ -95,6 +107,8 @@ export const CAR_MODELS: readonly CarModel[] = [
     price: 62_000,
     requiredSeniority: 'senior',
     powerHp: 114,
+    massKg: 1080,
+    wheelbaseM: 2.6,
     tankLiters: 41,
     kmPerLiter: 13,
     initialCondition: 1,
@@ -107,6 +121,8 @@ export const CAR_MODELS: readonly CarModel[] = [
     price: 99_000,
     requiredSeniority: 'senior',
     powerHp: 75,
+    massKg: 1150,
+    wheelbaseM: 2.5,
     tankLiters: 0,
     kmPerLiter: 0,
     initialCondition: 1,
@@ -119,6 +135,8 @@ export const CAR_MODELS: readonly CarModel[] = [
     price: 230_000,
     requiredSeniority: 'fullstack',
     powerHp: 235,
+    massKg: 1900,
+    wheelbaseM: 2.71,
     tankLiters: 52,
     kmPerLiter: 18,
     initialCondition: 1,

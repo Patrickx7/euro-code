@@ -1,7 +1,9 @@
 import './style.css';
 import { EventBus } from './core/event-bus';
 import { GameLoop } from './core/game-loop';
+import { KeyboardDriveInput } from './core/input';
 import { SaveManager } from './core/save-manager';
+import { autopilot, carPhysics, fuelUsed, stepCar, type DriveState } from './gameplay/driving';
 import { createOpenRoadScene } from './render/open-road/open-road-scene';
 import { parseQuality } from './render/open-road/quality';
 import { BALANCE } from './shared/balance';
@@ -9,7 +11,9 @@ import type { GameEvents } from './shared/events';
 import { SENIORITY_LABEL } from './shared/profile';
 import { findCarModel } from './shared/vehicle';
 
-const CRUISE_SPEED_KMH = 60;
+/** Velocidade do piloto automático, antes de o jogador pegar no volante. */
+const AUTOPILOT_KMH = 60;
+const LOW_FUEL_FRACTION = 0.15;
 
 function element<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
@@ -37,7 +41,9 @@ function start() {
     speed: element('hud-speed'),
     seniority: element('hud-seniority'),
     car: element('hud-car'),
+    fuel: element('hud-fuel'),
     money: element('hud-money'),
+    mode: element('controls-mode'),
     fps: element('hud-fps'),
   };
 
@@ -76,7 +82,23 @@ function start() {
   window.addEventListener('resize', resize);
   resize();
 
-  const speed = CRUISE_SPEED_KMH / 3.6;
+  const physics = carModel ? carPhysics(carModel, activeCar?.condition.components.engine ?? 1) : null;
+  const input = new KeyboardDriveInput();
+  const { world } = scene;
+  let drive: DriveState = { ...world.startPose(), speed: 0, steer: 0 };
+  let lowFuelWarned = false;
+
+  const showFuel = () => {
+    if (!activeCar || !carModel) return;
+    if (carModel.tankLiters === 0) {
+      hud.fuel.textContent = 'elétrico';
+      return;
+    }
+    const fraction = activeCar.fuelLiters / carModel.tankLiters;
+    hud.fuel.textContent = `${activeCar.fuelLiters.toFixed(1)} L`;
+    hud.fuel.classList.toggle('is-low', fraction < LOW_FUEL_FRACTION);
+  };
+
   const gameMinutesPerSecond = BALANCE.clock.gameMinutesPerRealMinute / 60;
   let lastMinute = -1;
   let frames = 0;
@@ -84,7 +106,37 @@ function start() {
 
   const loop = new GameLoop({
     update(dt) {
-      scene.update(dt, speed);
+      if (physics && activeCar && carModel) {
+        const command = input.touched
+          ? input.read()
+          : autopilot(drive, world.laneTarget(drive.x, drive.z, 14), AUTOPILOT_KMH / 3.6);
+        // Tanque vazio: o motor não responde (no futuro, o posto exige um exercício).
+        if (carModel.tankLiters > 0 && activeCar.fuelLiters <= 0) command.throttle = 0;
+        const surface = world.surfaceAt(drive.x, drive.z);
+        const next = stepCar(drive, command, dt, physics, surface);
+        // Limite do mundo: o carro para na borda do terreno.
+        if (Math.max(Math.abs(next.x), Math.abs(next.z)) > world.halfSize) {
+          next.x = drive.x;
+          next.z = drive.z;
+          next.speed = 0;
+        }
+        const moved = Math.hypot(next.x - drive.x, next.z - drive.z) * Math.sign(next.speed);
+        drive = next;
+        activeCar.fuelLiters = Math.max(
+          0,
+          activeCar.fuelLiters - fuelUsed(moved, command.throttle, carModel.kmPerLiter),
+        );
+        activeCar.condition.odometerKm += Math.abs(moved) / 1000;
+        if (
+          !lowFuelWarned &&
+          carModel.tankLiters > 0 &&
+          activeCar.fuelLiters < carModel.tankLiters * LOW_FUEL_FRACTION
+        ) {
+          lowFuelWarned = true;
+          bus.emit('fuel:low', { liters: activeCar.fuelLiters });
+        }
+        scene.update(dt, { x: drive.x, z: drive.z, heading: drive.heading, moved });
+      }
       save.gameMinutes += dt * gameMinutesPerSecond;
       const minute = Math.floor(save.gameMinutes);
       if (minute !== lastMinute) {
@@ -103,14 +155,17 @@ function start() {
         frames = 0;
         fpsWindowStart = now;
       }
+      hud.speed.textContent = `${Math.round(Math.abs(drive.speed) * 3.6)} km/h`;
+      hud.mode.textContent = input.touched ? 'Você dirige' : 'Piloto automático';
+      showFuel();
     },
   });
 
   bus.on('clock:tick', ({ gameMinutes }) => {
     hud.clock.textContent = formatClock(gameMinutes);
   });
-  hud.speed.textContent = `${CRUISE_SPEED_KMH} km/h`;
   hud.clock.textContent = formatClock(save.gameMinutes);
+  showFuel();
   loop.start();
 }
 
