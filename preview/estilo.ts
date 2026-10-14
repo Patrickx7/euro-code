@@ -836,7 +836,7 @@ if (view === 'dentro') {
   camera.position.copy(eye);
   camera.lookAt(car.position.clone().addScaledVector(forward, 70));
 } else {
-  camera.position.copy(car.position).addScaledVector(forward, -7.2).addScaledVector(carUp, 2.4);
+  camera.position.copy(car.position).addScaledVector(forward, -9).addScaledVector(carUp, 2.6);
   camera.lookAt(car.position.clone().addScaledVector(forward, 24).addScaledVector(carUp, 1.1));
 }
 sunLight.position.copy(car.position).addScaledVector(sun, 400);

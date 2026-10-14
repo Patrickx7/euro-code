@@ -23,6 +23,7 @@ from mathutils import Vector  # noqa: E402
 OUT = sys.argv[-1] if sys.argv[-1].endswith(".glb") else "quadradinho.glb"
 HERE = os.path.dirname(os.path.abspath(__file__))
 
+SCALE = 0.95  # o modelo é desenhado um pouco maior; isto o leva às medidas de um popular compacto
 AXLE_X = 1.17
 WHEEL_R = 0.29
 ARCH_R = 0.32
@@ -156,22 +157,22 @@ def smooth(obj, angle=35):
 # Ordem: da frente para trás.
 HOOD = "hood"
 SECTIONS = [
-    (1.82, 0.33, 0.62, 0.65, 0.68, 0.70, 0.66, 0.62),  # bico baixo
-    (1.78, 0.25, 0.67, 0.70, 0.72, 0.755, 0.71, 0.66),
+    (1.82, 0.33, 0.62, 0.65, 0.68, 0.7, 0.66, 0.62),  # bico baixo
+    (1.78, 0.25, 0.67, 0.7, 0.72, 0.755, 0.71, 0.66),
     (1.55, 0.19, 0.73, 0.75, 0.77, 0.77, 0.725, 0.68),
-    (1.25, 0.19, 0.78, 0.80, 0.82, 0.775, 0.73, 0.685),  # capô caindo para a frente
-    (1.02, 0.19, 0.82, 0.84, 0.86, 0.775, 0.73, 0.685),  # base do para-brisa (quase sobre a roda)
-    (0.62, 0.19, 0.83, 1.08, 1.13, 0.775, 0.725, 0.67),
-    (0.24, 0.19, 0.84, 1.33, 1.38, 0.775, 0.72, 0.665),  # topo do para-brisa
-    (-0.48, 0.19, 0.85, 1.35, 1.40, 0.775, 0.72, 0.665),  # coluna B (frente)
-    (-0.58, 0.19, 0.85, 1.35, 1.40, 0.775, 0.72, 0.665),  # coluna B (trás)
-    (-1.12, 0.19, 0.87, 1.35, 1.40, 0.775, 0.72, 0.665),  # fim do vidro lateral traseiro
-    (-1.36, 0.19, 0.88, 1.34, 1.39, 0.77, 0.715, 0.66),
-    (-1.48, 0.23, 0.88, 1.31, 1.36, 0.765, 0.71, 0.655),  # topo da tampa traseira
-    (-1.62, 0.25, 0.88, 1.10, 1.14, 0.76, 0.70, 0.65),
-    (-1.70, 0.28, 0.88, 0.94, 0.97, 0.755, 0.70, 0.65),  # fim do vidro traseiro
-    (-1.76, 0.31, 0.85, 0.88, 0.91, 0.745, 0.69, 0.64),
-    (-1.79, 0.35, 0.80, 0.83, 0.86, 0.72, 0.67, 0.62),
+    (1.25, 0.19, 0.8, 0.825, 0.85, 0.775, 0.73, 0.685),  # capô caindo para a frente
+    (1.02, 0.19, 0.87, 0.895, 0.92, 0.775, 0.73, 0.685),  # base do para-brisa (quase sobre a roda)
+    (0.62, 0.19, 0.92, 1.08, 1.13, 0.775, 0.725, 0.67),
+    (0.24, 0.19, 0.93, 1.33, 1.38, 0.775, 0.72, 0.665),  # topo do para-brisa
+    (-0.48, 0.19, 0.94, 1.35, 1.4, 0.775, 0.72, 0.665),  # coluna B (frente)
+    (-0.58, 0.19, 0.94, 1.35, 1.4, 0.775, 0.72, 0.665),  # coluna B (trás)
+    (-1.12, 0.19, 0.96, 1.35, 1.4, 0.775, 0.72, 0.665),  # fim do vidro lateral traseiro
+    (-1.36, 0.19, 0.97, 1.34, 1.39, 0.77, 0.715, 0.66),
+    (-1.48, 0.23, 0.97, 1.31, 1.36, 0.765, 0.71, 0.655),  # topo da tampa traseira
+    (-1.62, 0.25, 0.97, 1.1, 1.14, 0.76, 0.7, 0.65),
+    (-1.7, 0.28, 0.9, 0.94, 0.97, 0.755, 0.7, 0.65),  # fim do vidro traseiro
+    (-1.76, 0.31, 0.84, 0.88, 0.91, 0.745, 0.69, 0.64),
+    (-1.79, 0.35, 0.8, 0.83, 0.86, 0.72, 0.67, 0.62),
 ]
 # Faixas de seções (índice da seção da frente) usadas para atribuir materiais.
 WINDSHIELD = range(4, 6)  # seções 4-5 e 5-6
@@ -339,13 +340,13 @@ def bumpers_and_trim():
         parts.append(rounded_box(f"BumperFrontCorner{side}", (0.45, 0.1, 0.25), (1.6, side * 0.73, 0.38), M["Trim"], 0.05))
         parts.append(rounded_box(f"BumperRearCorner{side}", (0.4, 0.1, 0.25), (-1.62, side * 0.73, 0.41), M["Trim"], 0.05))
         # Friso lateral de proteção, entre as rodas.
-        parts.append(rounded_box(f"SideMolding{side}", (1.95, 0.03, 0.06), (-0.05, side * 0.788, 0.42), M["Trim"], 0.012))
+        parts.append(rounded_box(f"SideMolding{side}", (1.62, 0.03, 0.06), (0.0, side * 0.788, 0.42), M["Trim"], 0.012))
         parts.append(rounded_box(f"Sill{side}", (1.6, 0.04, 0.08), (-0.05, side * 0.77, 0.26), M["Trim"], 0.02))
         # Retrovisor.
         parts.append(rounded_box(f"Mirror{side}", (0.1, 0.16, 0.11), (0.96, side * 0.87, 0.93), M["Trim"], 0.03))
         parts.append(rounded_box(f"MirrorArm{side}", (0.07, 0.1, 0.04), (0.98, side * 0.8, 0.9), M["Trim"], 0.01))
         # Maçaneta.
-        parts.append(rounded_box(f"Handle{side}", (0.13, 0.025, 0.03), (-0.36, side * 0.79, 0.79), M["Trim"], 0.01))
+        parts.append(rounded_box(f"Handle{side}", (0.13, 0.025, 0.03), (-0.36, side * 0.79, 0.86), M["Trim"], 0.01))
         # Faróis retangulares, pisca e lanternas traseiras.
         parts.append(rounded_box(f"HeadlightReflector{side}", (0.03, 0.36, 0.11), (1.805, side * 0.52, 0.6), M["Chrome"], 0.01))
         parts.append(rounded_box(f"HeadlightBulb{side}", (0.04, 0.07, 0.06), (1.82, side * 0.47, 0.6), M["Headlight"], 0.02))
@@ -383,10 +384,10 @@ def bumpers_and_trim():
 def door_with_other_color():
     """A porta esquerda veio do ferro-velho: mesma forma da lataria, outra cor."""
     parts = []
-    bpy.ops.mesh.primitive_cube_add(size=1, location=(0.235, 0.785, 0.55))
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0.235, 0.785, 0.585))
     door = bpy.context.active_object
     door.name = "Door_L"
-    door.scale = (1.4, 0.012, 0.55)
+    door.scale = (1.4, 0.012, 0.62)
     bpy.ops.object.transform_apply(scale=True)
     mod = door.modifiers.new("Bevel", "BEVEL")
     mod.width = 0.03
@@ -398,7 +399,7 @@ def door_with_other_color():
     # Frestas das portas (dos dois lados).
     for side in (1, -1):
         for x in (0.95, -0.48):
-            parts.append(rounded_box(f"DoorGap{side}{x}", (0.008, 0.012, 0.62), (x, side * 0.79, 0.575), M["Trim"], 0.002, 1))
+            parts.append(rounded_box(f"DoorGap{side}{x}", (0.008, 0.012, 0.68), (x, side * 0.79, 0.6), M["Trim"], 0.002, 1))
         parts.append(rounded_box(f"DoorGapBottom{side}", (1.43, 0.012, 0.008), (0.235, side * 0.79, 0.27), M["Trim"], 0.002, 1))
     return parts
 
@@ -635,11 +636,24 @@ def main():
     bpy.context.active_object.name = "Details"
 
     root = bpy.data.objects.new("Quadradinho", None)
+    root.scale = (SCALE, SCALE, SCALE)
     bpy.context.scene.collection.objects.link(root)
     for o in list(bpy.context.scene.objects):
         if o is not root and o.parent is None:
             o.parent = root
 
+    bpy.context.view_layer.update()
+    lo = Vector((1e9, 1e9, 1e9))
+    hi = Vector((-1e9, -1e9, -1e9))
+    for o in bpy.context.scene.objects:
+        if o.type != "MESH":
+            continue
+        for corner in o.bound_box:
+            p = o.matrix_world @ Vector(corner)
+            lo = Vector(map(min, lo, p))
+            hi = Vector(map(max, hi, p))
+    size = hi - lo
+    print(f"Medidas: comprimento {size.x:.2f} m, largura {size.y:.2f} m (com retrovisores), altura {size.z:.2f} m")
     os.makedirs(os.path.dirname(os.path.abspath(OUT)), exist_ok=True)
     bpy.ops.export_scene.gltf(
         filepath=os.path.abspath(OUT),
