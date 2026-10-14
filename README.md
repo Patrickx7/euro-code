@@ -86,10 +86,19 @@ npm run dev
 # abra http://localhost:5173/preview/estilo.html            (fim de tarde, atrás do carro)
 #      http://localhost:5173/preview/estilo.html?view=vista (vista do alto)
 #      http://localhost:5173/preview/estilo.html?time=dusk  (crepúsculo)
+#      http://localhost:5173/preview/estilo.html?view=dentro (de dentro do carro)
+#      http://localhost:5173/preview/garagem.html?angulo=frente&cor=8fb0c4 (carro em estúdio; também tras, lado, dentro)
 #      http://localhost:5173/preview/telas.html?tela=app    (também: notebook, criador)
 ```
 
 Para gerar as imagens da prévia, rode `npx tsx preview/capture.ts <pasta> "estilo.html?view=vista"`.
+
+Os carros são gerados por script no Blender (o Blender como módulo Python):
+
+```bash
+pip install bpy pillow
+python tools/blender/quadradinho.py public/models/carros/quadradinho.glb
+```
 
 ## Desenvolvimento
 
@@ -111,6 +120,7 @@ npm run e2e               # navegador (Playwright)
 | `src/edu/runner/`       | executor de exercícios que imita o Node (fs, path, events, assert, timers) e checa tipos TypeScript |
 | `src/edu/validation.ts` | regras de qualidade do conteúdo (`content/README.md` explica como escrever)                         |
 | `preview/`              | prévias visuais (estrada, rua e telas) e o script de captura                                        |
+| `tools/blender/`        | carros modelados por script no Blender, exportados em glTF para `public/models/`                    |
 
 ## Créditos
 
