@@ -36,6 +36,10 @@ export const BALANCE = {
     hotelNight: 150,
     hotelExtraPerWrongAnswer: 50,
     tollWrongAnswerSurcharge: 1,
+    /** Tarifa do pedágio do circuito. */
+    tollPrice: 8,
+    /** Preço do litro da gasolina. */
+    fuelPricePerLiter: 6,
   },
   police: {
     /** Probabilidade de um ponto de blitz estar ativo (dia / noite). */

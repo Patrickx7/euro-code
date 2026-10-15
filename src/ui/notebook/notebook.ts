@@ -10,7 +10,6 @@ import type { ExerciseRunResult } from '../../edu/runner/run-exercise';
 import { mountPage, runWebInIframe } from '../../edu/web/iframe-runner';
 import type { WebRunResult } from '../../edu/web/types';
 import { runCodeExercise } from '../../edu/worker/runner-client';
-import type { DeliveryResult } from '../../gameplay/jobs';
 import { currentTask, readyToDeliver, type JobSession } from '../../gameplay/job-session';
 import { BALANCE } from '../../shared/balance';
 import {
@@ -35,9 +34,19 @@ export interface NotebookOptions {
   payForHint(): boolean;
   /** Task resolvida: devolve os imprevistos que o cliente soltou. */
   onTaskSolved(exerciseId: string): JobTwist[];
-  onDeliver(): DeliveryResult;
+  /** Entrega: devolve o resumo mostrado na tela final. */
+  onDeliver(): NotebookSummary;
+  /** Texto do botão de entrega (padrão: "Entregar job"). */
+  deliverLabel?: string;
   /** Fecha o notebook (o job continua; dá para voltar). */
   onClose(): void;
+}
+
+export interface NotebookSummary {
+  heading: string;
+  lines: string[];
+  /** Estrelas do cliente (jobs). */
+  stars?: number;
 }
 
 export interface NotebookHandle {
@@ -71,7 +80,7 @@ export function openNotebook(options: NotebookOptions): NotebookHandle {
   let editor: EditorView | null = null;
   let previewTimer: ReturnType<typeof setTimeout> | undefined;
   let running = false;
-  let delivered: DeliveryResult | null = null;
+  let delivered: NotebookSummary | null = null;
 
   const chat = h('ol', { class: 'nb-chat', 'aria-live': 'polite' });
   const say = (who: 'client' | 'me' | 'system', text: string) => {
@@ -102,7 +111,7 @@ export function openNotebook(options: NotebookOptions): NotebookHandle {
   const deliverButton = h(
     'button',
     { class: 'nb-deliver', type: 'button', 'data-action': 'deliver' },
-    'Entregar job',
+    options.deliverLabel ?? 'Entregar job',
   );
   const closeButton = h('button', { class: 'nb-ghost', type: 'button' }, 'Fechar notebook');
 
@@ -405,23 +414,26 @@ export function openNotebook(options: NotebookOptions): NotebookHandle {
     renderSummary(delivered);
   }
 
-  function renderSummary(result: DeliveryResult): void {
-    const stars = '★'.repeat(result.stars) + '☆'.repeat(5 - result.stars);
+  function renderSummary(summary: NotebookSummary): void {
+    const stars =
+      summary.stars === undefined
+        ? null
+        : h(
+            'p',
+            { class: 'nb-stars', 'aria-label': `${summary.stars} estrelas` },
+            '★'.repeat(summary.stars) + '☆'.repeat(5 - summary.stars),
+          );
     root.replaceChildren(
       h(
         'div',
-        { class: 'notebook', role: 'dialog', 'aria-label': 'Job entregue' },
+        { class: 'notebook', role: 'dialog', 'aria-label': summary.heading },
         h(
           'div',
           { class: 'nb-summary' },
-          h('h2', {}, 'Job entregue!'),
+          h('h2', {}, summary.heading),
           h('p', { class: 'nb-summary__client' }, session.job.client.name),
-          h('p', { class: 'nb-stars', 'aria-label': `${result.stars} estrelas` }, stars),
-          h(
-            'p',
-            {},
-            `SLA: ${Math.round(result.slaRatio * 100)}% do prazo · Recebeu ${brl.format(result.pay)}`,
-          ),
+          stars,
+          ...summary.lines.map((line) => h('p', {}, line)),
           chat,
           h(
             'button',

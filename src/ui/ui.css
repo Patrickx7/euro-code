@@ -591,3 +591,131 @@
     min-height: 600px;
   }
 }
+
+/* ---------- perguntas (pedágio, blitz, hotel) e avisos ---------- */
+
+.question-dialog,
+.stop-dialog {
+  width: min(560px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  padding: 20px 22px;
+  border-radius: 16px;
+  background: #15171c;
+  color: #e6e8ee;
+  box-shadow: 0 30px 80px rgb(0 0 0 / 0.5);
+}
+
+.question-dialog h2,
+.stop-dialog h2 {
+  margin: 0;
+  color: var(--accent);
+}
+
+.qd-subtitle {
+  margin: 4px 0 12px;
+  color: #9097a6;
+  font-size: 0.9rem;
+}
+
+.qd-prompt {
+  font-size: 1.05rem;
+}
+
+.qd-code {
+  padding: 10px;
+  border-radius: 8px;
+  background: #0c0d10;
+  overflow: auto;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 0.85rem;
+}
+
+.qd-options {
+  display: grid;
+  gap: 8px;
+}
+
+.qd-option {
+  padding: 10px 12px;
+  border: 1px solid #2c303a;
+  border-radius: 10px;
+  background: #1d2027;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.qd-option[aria-checked='true'] {
+  border-color: #6c3bd1;
+  background: #2a2140;
+}
+
+.qd-text {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #2c303a;
+  border-radius: 8px;
+  background: #0c0d10;
+  color: inherit;
+  font-family: ui-monospace, Menlo, monospace;
+}
+
+.qd-label {
+  display: block;
+  margin: 8px 0 4px;
+}
+
+.qd-submit {
+  margin-top: 14px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: #6c3bd1;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.qd-ok {
+  color: #4cc38a;
+  font-weight: 700;
+}
+
+.qd-bad {
+  color: #ff7a6b;
+  font-weight: 700;
+}
+
+.qd-explanation {
+  color: #c5cad6;
+}
+
+.stop-dialog p {
+  line-height: 1.5;
+}
+
+.stop-dialog .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.stop-dialog button {
+  padding: 10px 16px;
+  border: 1px solid #2c303a;
+  border-radius: 10px;
+  background: #1d2027;
+  color: #e6e8ee;
+  font: inherit;
+  cursor: pointer;
+}
+
+.stop-dialog button.primary {
+  border-color: transparent;
+  background: #6c3bd1;
+  font-weight: 700;
+}

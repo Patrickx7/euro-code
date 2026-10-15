@@ -18,6 +18,8 @@ import { QUALITY_PRESETS } from './quality';
 import { LANE_OFFSET, RoadLoop, type RoadFrame } from './road';
 import { buildRoadMesh } from './road-mesh';
 import { ClientMarker } from './client-marker';
+import { buildGasStation, buildTollPlaza } from './landmarks';
+import { BALANCE } from '../../shared/balance';
 import { buildPowerLine } from './roadside';
 import { buildTerrain, createTerrainMaterial } from './terrain';
 import { DistanceCuller } from './tiles';
@@ -38,6 +40,8 @@ export interface DrivingWorld {
   roadDistance(x: number, z: number): number;
   /** Ponto ao lado da estrada: `lateral` metros à direita do centro, a `distance` metros do início. */
   pointOnRoad(distance: number, lateral: number): { x: number; z: number };
+  /** Posto (onde parar para abastecer) e pedágio (onde fica a cancela), pela distância na estrada. */
+  stops: { fuel: { distance: number; x: number; z: number }; toll: { distance: number } };
 }
 
 export interface CarPose {
@@ -51,6 +55,8 @@ export interface CarPose {
 
 export interface GameScene {
   world: DrivingWorld;
+  /** Abre ou fecha a cancela do pedágio. */
+  setTollOpen(open: boolean): void;
   /** Mostra (ou esconde, com `null`) o marcador do cliente. */
   setClientMarker(marker: { x: number; z: number; name: string } | null): void;
   /** Posiciona o carro e a câmera. */
@@ -120,6 +126,11 @@ export function createOpenRoadScene(canvas: HTMLCanvasElement, options: OpenRoad
   scene.add(car.group);
   const marker = new ClientMarker();
   scene.add(marker.group);
+  const fuelDistance = road.length * 0.3;
+  const tollDistance = road.length * 0.7;
+  const gasStation = buildGasStation(road, fuelDistance, BALANCE.economy.fuelPricePerLiter);
+  const tollPlaza = buildTollPlaza(road, tollDistance);
+  scene.add(gasStation.group, tollPlaza.group);
 
   const composer: EffectComposer | null = preset.post
     ? createComposer(renderer, scene, camera, { bloom: preset.bloom, tint: GOLDEN_HOUR.tint })
@@ -143,6 +154,10 @@ export function createOpenRoadScene(canvas: HTMLCanvasElement, options: OpenRoad
     roadLength: road.length,
     roadDistance(x, z) {
       return (road.nearest(x, z).index / road.points.length) * road.length;
+    },
+    stops: {
+      fuel: { distance: fuelDistance, x: gasStation.stopPoint.x, z: gasStation.stopPoint.z },
+      toll: { distance: tollDistance },
     },
     pointOnRoad(distance, lateral) {
       const frame = road.frameAt(distance, laneFrame);
@@ -213,6 +228,9 @@ export function createOpenRoadScene(canvas: HTMLCanvasElement, options: OpenRoad
 
   return {
     world,
+    setTollOpen(open) {
+      tollPlaza.setOpen(open);
+    },
     setClientMarker(target) {
       if (!target) {
         marker.hide();
@@ -223,6 +241,7 @@ export function createOpenRoadScene(canvas: HTMLCanvasElement, options: OpenRoad
     },
     update(dt, pose) {
       marker.update(dt);
+      tollPlaza.update(dt);
       car.roll(pose.moved);
       placeCar(pose);
       placeCamera(dt);

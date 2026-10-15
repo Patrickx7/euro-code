@@ -13,19 +13,20 @@ import { BALANCE } from '../shared/balance';
 import type { GameEvents } from '../shared/events';
 import type { SaveData } from '../shared/save';
 import { mulberry32 } from '../shared/random';
-import { h } from './dom';
+import { brl, h } from './dom';
 import { renderJobsApp } from './jobs-app';
 import type { NotebookHandle } from './notebook/notebook';
+import type { Overlay } from './overlay';
+
+const OWNER = 'jobs';
 
 export interface JobControllerDeps {
   save: SaveData;
   saveManager: SaveManager;
   bus: EventBus<GameEvents>;
   scene: GameScene;
-  overlay: HTMLElement;
+  overlay: Overlay;
   hud: HTMLElement;
-  /** Avisa o jogo que o celular/notebook abriu ou fechou (desliga a direção). */
-  onOverlayChange(open: boolean): void;
   /** Dinheiro, senioridade etc. mudaram. */
   onSaveChange(): void;
 }
@@ -60,15 +61,6 @@ export class JobController {
     });
   }
 
-  get overlayOpen(): boolean {
-    return this.mode !== 'none';
-  }
-
-  /** Durante o notebook o relógio anda mais devagar. */
-  get timeScale(): number {
-    return this.mode === 'notebook' ? BALANCE.clock.codingTimeScale : 1;
-  }
-
   /** Metros, pela estrada, até o cliente (ou `null` sem job a caminho). */
   clientAhead(x: number, z: number): number | null {
     if (!this.client || this.session?.phase !== 'driving') return null;
@@ -84,21 +76,23 @@ export class JobController {
     else if (this.mode === 'none') void this.openPhone();
   }
 
-  private setMode(mode: typeof this.mode): void {
+  /** Abre a tela no overlay; `false` se outra tela (posto, pedágio) já está aberta. */
+  private setMode(mode: 'phone' | 'notebook'): boolean {
+    if (!this.deps.overlay.open(OWNER, mode === 'notebook' ? 'notebook' : 'dialog')) return false;
     this.mode = mode;
-    this.deps.onOverlayChange(mode !== 'none');
+    return true;
   }
 
   private closeOverlay(): void {
     this.notebook?.close();
     this.notebook = null;
-    this.deps.overlay.replaceChildren();
-    this.setMode('none');
+    this.mode = 'none';
+    this.deps.overlay.close(OWNER);
   }
 
   private async openPhone(): Promise<void> {
-    this.setMode('phone');
-    this.deps.overlay.replaceChildren(h('div', { class: 'phone' }, h('p', {}, 'Carregando os jobs...')));
+    if (!this.setMode('phone')) return;
+    this.deps.overlay.root.replaceChildren(h('div', { class: 'phone' }, h('p', {}, 'Carregando os jobs...')));
     const catalog = await loadCatalog();
     if (this.mode !== 'phone') return;
     const { save } = this.deps;
@@ -110,7 +104,7 @@ export class JobController {
       : undefined;
     const forcedJob = forcedModule?.jobs.find((j) => j.id === forced);
     if (forcedModule && forcedJob) offers.unshift({ job: forcedJob, module: forcedModule });
-    renderJobsApp(this.deps.overlay, {
+    renderJobsApp(this.deps.overlay.root, {
       offers,
       seniority: save.career.seniority,
       activeJobId: this.session?.job.id ?? null,
@@ -136,7 +130,7 @@ export class JobController {
   }
 
   private canOpenNotebook(): boolean {
-    return this.mode === 'none' && this.session?.phase === 'working';
+    return !this.deps.overlay.isOpen && this.session?.phase === 'working';
   }
 
   /** Chamado a cada passo do loop com a posição do carro. */
@@ -145,7 +139,7 @@ export class JobController {
     const { session, client } = this;
     if (session?.phase === 'driving' && client) {
       const near = Math.hypot(car.x - client.x, car.z - client.z) < BALANCE.jobs.arrivalRadiusM;
-      if (near && Math.abs(car.speed) < 1) {
+      if (near && Math.abs(car.speed) < 1 && !this.deps.overlay.isOpen) {
         arrive(session, this.deps.save.gameMinutes);
         this.deps.bus.emit('job:arrived', { jobId: session.job.id, gameMinutes: this.deps.save.gameMinutes });
         void this.openNotebook();
@@ -159,11 +153,11 @@ export class JobController {
     const { hud } = this.deps;
     const { session } = this;
     if (!session) {
-      hud.hidden = this.mode !== 'none';
+      hud.hidden = this.deps.overlay.isOpen;
       hud.replaceChildren('Sem job. Abra o app de freelas no celular: ', h('strong', {}, 'J'));
       return;
     }
-    hud.hidden = this.mode !== 'none';
+    hud.hidden = this.deps.overlay.isOpen;
     const ahead = this.clientAhead(car.x, car.z);
     if (session.phase === 'driving' && ahead !== null) {
       const distance =
@@ -180,12 +174,12 @@ export class JobController {
   private async openNotebook(): Promise<void> {
     const session = this.session;
     if (!session || this.mode === 'notebook') return;
-    this.setMode('notebook');
-    this.deps.overlay.replaceChildren(h('div', { class: 'phone' }, h('p', {}, 'Abrindo o notebook...')));
+    if (!this.setMode('notebook')) return;
+    this.deps.overlay.root.replaceChildren(h('div', { class: 'phone' }, h('p', {}, 'Abrindo o notebook...')));
     const [{ openNotebook }, catalog] = await Promise.all([import('./notebook/notebook'), loadCatalog()]);
     const { save, bus } = this.deps;
     this.notebook = openNotebook({
-      root: this.deps.overlay,
+      root: this.deps.overlay.root,
       session,
       catalog,
       now: () => save.gameMinutes,
@@ -216,7 +210,11 @@ export class JobController {
         bus.emit('job:delivered', { jobId: session.job.id, ...result });
         this.deps.saveManager.write(save);
         this.deps.onSaveChange();
-        return result;
+        return {
+          heading: 'Job entregue!',
+          stars: result.stars,
+          lines: [`SLA: ${Math.round(result.slaRatio * 100)}% do prazo · Recebeu ${brl.format(result.pay)}`],
+        };
       },
       onClose: () => {
         if (session.phase === 'delivered') {
